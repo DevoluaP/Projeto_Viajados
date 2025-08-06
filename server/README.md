@@ -1,4 +1,4 @@
-# Backend Viajados - Desenvolvido Totalmente Por Julio Akamine
+# Back-end Viajados
 
 ## Funcionalidades
 - Cadastro e autenticação de usuários.
@@ -89,7 +89,7 @@
 - **Body:**
 ```json
 {
-    "nome": "Julio"
+    "nome": "Nome do usuário"
 }
 ```
 - **Requer:** Token Bearer e `idUsuario` na URL.  
