@@ -26,7 +26,6 @@ Certifique-se de ter as seguintes ferramentas instaladas:
 * [Node.js](https://nodejs.org) (para rodar o back-end)
 * [Git](https://git-scm.com) (para clonar o repositório)
 * [XAMPP](https://www.apachefriends.org/) ou [WAMP](https://www.wampserver.com/) (para rodar o servidor MySQL)
-* **phpMyAdmin** (geralmente incluído no XAMPP/WAMP para gerenciar o banco de dados)
 
 ### Passos para Instalação
 
@@ -43,25 +42,15 @@ git clone https://github.com/DevoluaP/Projeto_Viajados.git
 cd Projeto_Viajados
 ```
 ```bash
-npm install
+npm run install
 ```
 
 
 #### 3. Configure o Banco de Dados:
 
-1. **Inicie o XAMPP/WAMP** e ative os módulos **Apache** e **MySQL**
-2. Acesse o **phpMyAdmin** pelo navegador: `http://localhost/phpmyadmin`
-3. Crie um novo banco de dados chamado `viajados`:
-   - Clique em "Novo" (New)
-   - Nome do banco: `viajados`
-   - Cotejamento: `utf8_bin`
-   - Clique em "Criar"
-4. Importe a estrutura do banco de dados:
-   - Selecione o banco `viajados`
-   - Vá na aba "Importar" (Import)
-   - Clique em "Escolher arquivo" e selecione o arquivo SQL do projeto (em `server/src/db/viajados.sql`)
-   - Clique em "Executar"
+**Inicie o XAMPP/WAMP** e ative os módulos **Apache** e **MySQL**.
 
+No terminal, execute os comandos:
 ```bash
 cd server
 ```
@@ -70,7 +59,7 @@ npm run setup
 ```
 
 
-#### 5. Atualize o IP do servidor no front-end:
+#### 4. Atualize o IP do servidor no front-end:
 
 Na pasta `client`, procure pelo arquivo `.env` e substitua pelo IP da sua máquina local:
 

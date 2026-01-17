@@ -42,7 +42,7 @@ export default function BannerMinhasViagens({
           name={i <= avaliacao ? "star" : "star-border"}
           size={24}
           color="#D6005D"
-        />
+        />,
       );
     }
     return estrelas;
