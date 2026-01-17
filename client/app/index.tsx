@@ -86,7 +86,7 @@ export default function Index() {
           text1: "Sucesso",
           text2: "Login realizado com sucesso!",
           visibilityTime: 1500,
-          position: "bottom",
+          position: "top",
         });
 
         setTimeout(() => {

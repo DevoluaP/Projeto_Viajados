@@ -101,6 +101,10 @@ Na pasta `client`, procure pelo arquivo `.env` e substitua pelo IP da sua máqui
    - Escaneie o QR Code com o app Expo Go
    - Ou pressione `A` para abrir no Android Studio
 
+4. **Usuário para testar**:
+   - Email: teste@viajados.com
+   - Senha: 123456
+
 
 ## Solução de Problemas Comuns
 
