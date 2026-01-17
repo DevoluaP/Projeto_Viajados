@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 14/03/2025 às 15:03
--- Versão do servidor: 10.4.32-MariaDB
--- Versão do PHP: 8.2.12
+-- Generation Time: Jan 17, 2026 at 05:12 AM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,13 +18,13 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Banco de dados: `viajados`
+-- Database: `viajados`
 --
 
 -- --------------------------------------------------------
 
 --
--- Estrutura para tabela `favoritos_hoteis`
+-- Table structure for table `favoritos_hoteis`
 --
 
 CREATE TABLE `favoritos_hoteis` (
@@ -33,19 +33,10 @@ CREATE TABLE `favoritos_hoteis` (
   `idHoteis` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
---
--- Despejando dados para a tabela `favoritos_hoteis`
---
-
-INSERT INTO `favoritos_hoteis` (`idFavoritoHotel`, `idUsuario`, `idHoteis`) VALUES
-(1, 1, 1),
-(2, 2, 2),
-(3, 3, 3);
-
 -- --------------------------------------------------------
 
 --
--- Estrutura para tabela `favoritos_voos`
+-- Table structure for table `favoritos_voos`
 --
 
 CREATE TABLE `favoritos_voos` (
@@ -54,42 +45,26 @@ CREATE TABLE `favoritos_voos` (
   `idVoos` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
---
--- Despejando dados para a tabela `favoritos_voos`
---
-
-INSERT INTO `favoritos_voos` (`idFavoritoVoo`, `idUsuario`, `idVoos`) VALUES
-(1, 1, 1),
-(2, 2, 2),
-(3, 3, 3);
-
 -- --------------------------------------------------------
 
 --
--- Estrutura para tabela `hospedagem`
+-- Table structure for table `hospedagem`
 --
 
 CREATE TABLE `hospedagem` (
   `idHospedagem` int(11) NOT NULL,
-  `localizacao_hotel` varchar(255) NOT NULL,
+  `idUsuario` int(11) NOT NULL,
   `idHoteis` int(11) NOT NULL,
+  `localizacao_hotel` varchar(255) NOT NULL,
   `data_entrada` date NOT NULL,
-  `data_saida` date NOT NULL
+  `data_saida` date NOT NULL,
+  `status` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
-
---
--- Despejando dados para a tabela `hospedagem`
---
-
-INSERT INTO `hospedagem` (`idHospedagem`, `localizacao_hotel`, `idHoteis`, `data_entrada`, `data_saida`) VALUES
-(1, 'Praia de Copacabana, RJ', 1, '2025-04-10', '2025-04-15'),
-(2, 'Centro Histórico, Salvador', 2, '2025-04-12', '2025-04-18'),
-(3, 'Serra Gaúcha, RS', 3, '2025-04-20', '2025-04-25');
 
 -- --------------------------------------------------------
 
 --
--- Estrutura para tabela `hoteis`
+-- Table structure for table `hoteis`
 --
 
 CREATE TABLE `hoteis` (
@@ -101,7 +76,7 @@ CREATE TABLE `hoteis` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 --
--- Despejando dados para a tabela `hoteis`
+-- Dumping data for table `hoteis`
 --
 
 INSERT INTO `hoteis` (`idHoteis`, `nome`, `preco_diaria`, `descricao`, `avaliacao`) VALUES
@@ -112,56 +87,47 @@ INSERT INTO `hoteis` (`idHoteis`, `nome`, `preco_diaria`, `descricao`, `avaliaca
 -- --------------------------------------------------------
 
 --
--- Estrutura para tabela `reserva_voo`
+-- Table structure for table `reserva_voo`
 --
 
 CREATE TABLE `reserva_voo` (
   `idReserva` int(11) NOT NULL,
-  `idVoos` int(11) NOT NULL,
   `idUsuario` int(11) NOT NULL,
-  `data_reserva` datetime NOT NULL
+  `idVoos` int(11) NOT NULL,
+  `data_reserva` datetime NOT NULL,
+  `status` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
-
---
--- Despejando dados para a tabela `reserva_voo`
---
-
-INSERT INTO `reserva_voo` (`idReserva`, `idVoos`, `idUsuario`, `data_reserva`) VALUES
-(1, 1, 1, '2025-03-15 10:00:00'),
-(2, 2, 2, '2025-03-16 14:00:00'),
-(3, 3, 3, '2025-03-17 09:30:00');
 
 -- --------------------------------------------------------
 
 --
--- Estrutura para tabela `usuario`
+-- Table structure for table `usuario`
 --
 
 CREATE TABLE `usuario` (
   `idUsuario` int(11) NOT NULL,
+  `nome` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
   `senha` varchar(255) NOT NULL,
-  `nome` varchar(255) NOT NULL,
-  `ativo` tinyint(1) NOT NULL DEFAULT 1,
   `cpf` varchar(11) DEFAULT NULL,
   `data_nascimento` date DEFAULT NULL,
   `nacionalidade` varchar(255) DEFAULT NULL,
-  `sexo` enum('M','F') DEFAULT NULL
+  `sexo` enum('M','F') DEFAULT NULL,
+  `foto_usuario` longblob DEFAULT NULL,
+  `ativo` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 --
--- Despejando dados para a tabela `usuario`
+-- Dumping data for table `usuario`
 --
 
-INSERT INTO `usuario` (`idUsuario`, `email`, `senha`, `nome`, `ativo`, `cpf`, `data_nascimento`, `nacionalidade`, `sexo`) VALUES
-(1, 'joao.silva@email.com', 'senha123', 'João Silva', 1, '12345678901', '1990-05-15', 'Brasileiro', 'M'),
-(2, 'maria.oliveira@email.com', 'abc456', 'Maria Oliveira', 1, '98765432109', '1985-08-22', 'Brasileira', 'F'),
-(3, 'pedro.santos@email.com', 'xyz789', 'Pedro Santos', 1, '45678912345', '1995-03-10', 'Brasileiro', 'M');
+INSERT INTO `usuario` (`idUsuario`, `nome`, `email`, `senha`, `cpf`, `data_nascimento`, `nacionalidade`, `sexo`, `foto_usuario`, `ativo`) VALUES
+(1, 'Conta Teste', 'teste@viajados.com', '$2b$10$UvzJfUp6CN6492cIeW.UPu1G.h4HEnrS5IXBw0nPG7GSGhd36A0hG', '12345678910', '2025-04-20', 'Brasileiro', 'M', NULL, 1);
 
 -- --------------------------------------------------------
 
 --
--- Estrutura para tabela `voos`
+-- Table structure for table `voos`
 --
 
 CREATE TABLE `voos` (
@@ -173,7 +139,7 @@ CREATE TABLE `voos` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 --
--- Despejando dados para a tabela `voos`
+-- Dumping data for table `voos`
 --
 
 INSERT INTO `voos` (`idVoos`, `destino`, `preco`, `origem`, `data`) VALUES
@@ -182,11 +148,11 @@ INSERT INTO `voos` (`idVoos`, `destino`, `preco`, `origem`, `data`) VALUES
 (3, 'Porto Alegre', 280, 'Curitiba', '2025-04-03 10:15:00');
 
 --
--- Índices para tabelas despejadas
+-- Indexes for dumped tables
 --
 
 --
--- Índices de tabela `favoritos_hoteis`
+-- Indexes for table `favoritos_hoteis`
 --
 ALTER TABLE `favoritos_hoteis`
   ADD PRIMARY KEY (`idFavoritoHotel`),
@@ -194,7 +160,7 @@ ALTER TABLE `favoritos_hoteis`
   ADD KEY `idHoteis` (`idHoteis`);
 
 --
--- Índices de tabela `favoritos_voos`
+-- Indexes for table `favoritos_voos`
 --
 ALTER TABLE `favoritos_voos`
   ADD PRIMARY KEY (`idFavoritoVoo`),
@@ -202,20 +168,21 @@ ALTER TABLE `favoritos_voos`
   ADD KEY `idVoos` (`idVoos`);
 
 --
--- Índices de tabela `hospedagem`
+-- Indexes for table `hospedagem`
 --
 ALTER TABLE `hospedagem`
   ADD PRIMARY KEY (`idHospedagem`),
-  ADD KEY `hospedagem_index_0` (`idHoteis`);
+  ADD KEY `hospedagem_index_0` (`idHoteis`),
+  ADD KEY `idUsuario` (`idUsuario`);
 
 --
--- Índices de tabela `hoteis`
+-- Indexes for table `hoteis`
 --
 ALTER TABLE `hoteis`
   ADD PRIMARY KEY (`idHoteis`);
 
 --
--- Índices de tabela `reserva_voo`
+-- Indexes for table `reserva_voo`
 --
 ALTER TABLE `reserva_voo`
   ADD PRIMARY KEY (`idReserva`),
@@ -223,7 +190,7 @@ ALTER TABLE `reserva_voo`
   ADD KEY `idUsuario` (`idUsuario`);
 
 --
--- Índices de tabela `usuario`
+-- Indexes for table `usuario`
 --
 ALTER TABLE `usuario`
   ADD PRIMARY KEY (`idUsuario`),
@@ -231,83 +198,83 @@ ALTER TABLE `usuario`
   ADD UNIQUE KEY `cpf` (`cpf`);
 
 --
--- Índices de tabela `voos`
+-- Indexes for table `voos`
 --
 ALTER TABLE `voos`
   ADD PRIMARY KEY (`idVoos`);
 
 --
--- AUTO_INCREMENT para tabelas despejadas
+-- AUTO_INCREMENT for dumped tables
 --
 
 --
--- AUTO_INCREMENT de tabela `favoritos_hoteis`
+-- AUTO_INCREMENT for table `favoritos_hoteis`
 --
 ALTER TABLE `favoritos_hoteis`
-  MODIFY `idFavoritoHotel` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `idFavoritoHotel` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de tabela `favoritos_voos`
+-- AUTO_INCREMENT for table `favoritos_voos`
 --
 ALTER TABLE `favoritos_voos`
-  MODIFY `idFavoritoVoo` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `idFavoritoVoo` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de tabela `hospedagem`
+-- AUTO_INCREMENT for table `hospedagem`
 --
 ALTER TABLE `hospedagem`
-  MODIFY `idHospedagem` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `idHospedagem` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de tabela `hoteis`
+-- AUTO_INCREMENT for table `hoteis`
 --
 ALTER TABLE `hoteis`
   MODIFY `idHoteis` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
--- AUTO_INCREMENT de tabela `reserva_voo`
+-- AUTO_INCREMENT for table `reserva_voo`
 --
 ALTER TABLE `reserva_voo`
-  MODIFY `idReserva` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `idReserva` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT de tabela `usuario`
+-- AUTO_INCREMENT for table `usuario`
 --
 ALTER TABLE `usuario`
-  MODIFY `idUsuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `idUsuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT de tabela `voos`
+-- AUTO_INCREMENT for table `voos`
 --
 ALTER TABLE `voos`
   MODIFY `idVoos` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
--- Restrições para tabelas despejadas
+-- Constraints for dumped tables
 --
 
 --
--- Restrições para tabelas `favoritos_hoteis`
+-- Constraints for table `favoritos_hoteis`
 --
 ALTER TABLE `favoritos_hoteis`
   ADD CONSTRAINT `favoritos_hoteis_ibfk_1` FOREIGN KEY (`idUsuario`) REFERENCES `usuario` (`idUsuario`) ON DELETE CASCADE ON UPDATE NO ACTION,
   ADD CONSTRAINT `favoritos_hoteis_ibfk_2` FOREIGN KEY (`idHoteis`) REFERENCES `hoteis` (`idHoteis`) ON DELETE CASCADE ON UPDATE NO ACTION;
 
 --
--- Restrições para tabelas `favoritos_voos`
+-- Constraints for table `favoritos_voos`
 --
 ALTER TABLE `favoritos_voos`
   ADD CONSTRAINT `favoritos_voos_ibfk_1` FOREIGN KEY (`idUsuario`) REFERENCES `usuario` (`idUsuario`) ON DELETE CASCADE ON UPDATE NO ACTION,
   ADD CONSTRAINT `favoritos_voos_ibfk_2` FOREIGN KEY (`idVoos`) REFERENCES `voos` (`idVoos`) ON DELETE CASCADE ON UPDATE NO ACTION;
 
 --
--- Restrições para tabelas `hospedagem`
+-- Constraints for table `hospedagem`
 --
 ALTER TABLE `hospedagem`
   ADD CONSTRAINT `hospedagem_ibfk_1` FOREIGN KEY (`idHoteis`) REFERENCES `hoteis` (`idHoteis`) ON DELETE CASCADE ON UPDATE NO ACTION;
 
 --
--- Restrições para tabelas `reserva_voo`
+-- Constraints for table `reserva_voo`
 --
 ALTER TABLE `reserva_voo`
   ADD CONSTRAINT `reserva_voo_ibfk_1` FOREIGN KEY (`idVoos`) REFERENCES `voos` (`idVoos`) ON DELETE CASCADE ON UPDATE NO ACTION,

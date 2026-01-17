@@ -1,38 +1,39 @@
 const express = require('express');
 const db = require("../db/conn");
-
 const router = express.Router();
 
-// Rota para cadastrar a foto do usuário específico com idUsuario
 router.post("/", async (req, res) => {
   try {
-    const { foto_usuario, idUsuario } = req.body;
-
-    if (!foto_usuario) {
-      return res.status(400).send('Foto do usuário é necessária.');
-    }
-
+    let { foto_usuario, idUsuario } = req.body;
     if (!idUsuario) {
-      return res.status(400).send('idUsuario é necessário.');
+      return res.status(400).json({ mensagem: 'idUsuario é necessário.'});
     }
 
-    // Verificar se o idUsuario existe no banco de dados
     const verificarUsuarioQuery = 'SELECT * FROM usuario WHERE idUsuario = ?';
     const [usuario] = await db.query(verificarUsuarioQuery, [idUsuario]);
-
-    // Se o usuário não existir
     if (usuario.length === 0) {
-      return res.status(404).send('Usuário não encontrado.');
+      return res.status(404).json({ mensagem: 'Usuário não encontrado.'});
     }
 
-    // Atualizar a foto do usuário
-    const updateQuery = 'UPDATE usuario SET foto_usuario = ? WHERE idUsuario = ?';
-    await db.query(updateQuery, [foto_usuario, idUsuario]);
+    if (foto_usuario) {
+      let base64Data = foto_usuario;
+      if (base64Data.startsWith('data:image')) {
+        base64Data = base64Data.replace(/^data:image\/\w+;base64,/, "");
+      }
 
-    res.status(200).send('Foto do usuário cadastrada com sucesso!');
+      const imageBuffer = Buffer.from(base64Data, 'base64');
+
+      const updateQuery = 'UPDATE usuario SET foto_usuario = ? WHERE idUsuario = ?';
+      await db.query(updateQuery, [imageBuffer, idUsuario]);
+    } else {
+      const updateQuery = 'UPDATE usuario SET foto_usuario = NULL WHERE idUsuario = ?';
+      await db.query(updateQuery, [idUsuario]);
+    }
+
+    res.status(200).json({ mensagem: 'Foto do usuário cadastrada com sucesso!'});
   } catch (error) {
     console.error('Erro:', error);
-    res.status(500).send('Erro interno do servidor');
+    res.status(500).json({ mensagem: 'Erro interno do servidor'});
   }
 });
 

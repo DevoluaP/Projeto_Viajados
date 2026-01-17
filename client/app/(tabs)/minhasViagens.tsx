@@ -1,3 +1,4 @@
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -7,13 +8,12 @@ import {
   Text,
   View,
 } from "react-native";
-import React, { useCallback, useEffect, useState } from "react";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import BannerMinhasViagens from "@/components/Banner-MinhasViagens/BannerMinhasVIagens";
+import BannerMinhasViagens from "@/components/Banner-MinhasViagens/BannerMinhasViagens";
 import BannerMinhasViagensVoo from "@/components/Banner-MinhasViagens/BannerMinhasViagensVoo";
-import verificarToken from "../verificarToken";
+import { verificarToken } from "../../functions/verificarToken";
 
 export default function MinhasViagens() {
   const navigation = useNavigation();
@@ -23,6 +23,7 @@ export default function MinhasViagens() {
   const [voos, setVoos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [idUsuario, setIdUsuario] = useState(null);
+  const baseURL = process.env.EXPO_PUBLIC_API_URL;
 
   const opcaoPressionada = (opcao) => {
     setOpcaoSelecionada(opcao);
@@ -36,105 +37,108 @@ export default function MinhasViagens() {
     verificarToken(navigation);
   }, [navigation]);
 
-  const fetchHospedagens = async () => {
+  const fetchHospedagens = useCallback(async (userId) => {
+    if (!userId) return;
+
     setIsLoading(true);
-    if (idUsuario) {
-      try {
-        const token = await AsyncStorage.getItem("token");
-        if (token) {
-          const response = await fetch(
-            `https://backend-viajados.vercel.app/api/reservas/hospedagens/${idUsuario}`,
-            {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          const data = await response.json();
-          if (Array.isArray(data.data)) {
-            setHospedagens(data.data);
-          } else {
-            console.error("Dados de hospedagem não são um array", data);
-            setHospedagens([]);
-          }
-        } else {
-          console.error("Token não encontrado no AsyncStorage");
-        }
-      } catch (error) {
-        console.error("Erro ao buscar hospedagens:", error);
-        setHospedagens([]);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  const fetchVoos = async () => {
-    setIsLoading(true);
-    if (idUsuario) {
-      try {
-        const token = await AsyncStorage.getItem("token");
-        if (token) {
-          const response = await fetch(
-            `https://backend-viajados.vercel.app/api/reservas/voos/${idUsuario}`,
-            {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          const data = await response.json();
-          if (Array.isArray(data.data)) {
-            setVoos(data.data);
-          } else {
-            console.error("Dados de voos não são um array", data);
-            setVoos([]);
-          }
-        } else {
-          console.error("Token não encontrado no AsyncStorage");
-        }
-      } catch (error) {
-        console.error("Erro ao buscar voos:", error);
-        setVoos([]);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  const getIdUsuario = async () => {
     try {
-      const id = await AsyncStorage.getItem("idUsuario");
-      if (id !== null) {
-        setIdUsuario(id);
+      const token = await AsyncStorage.getItem("token");
+      if (!token) {
+        console.error("Token não encontrado no AsyncStorage");
+        return;
+      }
+
+      const response = await fetch(
+        `${baseURL}/reservas/hospedagens/${userId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (Array.isArray(data.data)) {
+        setHospedagens(data.data);
+      } else {
+        console.error("Dados de hospedagem não são um array", data);
+        setHospedagens([]);
       }
     } catch (error) {
-      console.error("Erro ao ler idUsuario do AsyncStorage", error);
+      console.error("Erro ao buscar hospedagens:", error);
+      setHospedagens([]);
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, []);
 
-  const loadData = useCallback(() => {
+  const fetchVoos = useCallback(async (userId) => {
+    if (!userId) return;
+
+    setIsLoading(true);
+    try {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) {
+        console.error("Token não encontrado no AsyncStorage");
+        return;
+      }
+
+      const response = await fetch(
+        `${baseURL}/reservas/voos/${userId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (Array.isArray(data.data)) {
+        setVoos(data.data);
+      } else {
+        console.error("Dados de voos não são um array", data);
+        setVoos([]);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar voos:", error);
+      setVoos([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const getIdUsuario = async () => {
+      try {
+        const id = await AsyncStorage.getItem("idUsuario");
+        if (id !== null) {
+          setIdUsuario(id);
+        }
+      } catch (error) {
+        console.error("Erro ao ler idUsuario do AsyncStorage", error);
+      }
+    };
+
     getIdUsuario();
-    fetchHospedagens();
-    fetchVoos();
-  }, [idUsuario]);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [loadData])
-  );
+  }, []);
 
   useEffect(() => {
     if (idUsuario) {
-      fetchHospedagens();
-      fetchVoos();
+      fetchHospedagens(idUsuario);
+      fetchVoos(idUsuario);
     }
-  }, [opcaoSelecionada, idUsuario]);
+  }, [idUsuario, fetchHospedagens, fetchVoos]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (idUsuario) {
+        fetchHospedagens(idUsuario);
+        fetchVoos(idUsuario);
+      }
+    }, [idUsuario, fetchHospedagens, fetchVoos])
+  );
 
   return (
     <ScrollView style={styles.container}>
@@ -162,7 +166,8 @@ export default function MinhasViagens() {
             <Text
               style={[
                 styles.textoFiltro,
-                opcaoSelecionada === "agendado" && styles.textoFiltroSelecionado,
+                opcaoSelecionada === "agendado" &&
+                  styles.textoFiltroSelecionado,
               ]}
             >
               Agendado
@@ -179,7 +184,8 @@ export default function MinhasViagens() {
             <Text
               style={[
                 styles.textoFiltro,
-                opcaoSelecionada === "finalizado" && styles.textoFiltroSelecionado,
+                opcaoSelecionada === "finalizado" &&
+                  styles.textoFiltroSelecionado,
               ]}
             >
               Finalizado
@@ -232,66 +238,69 @@ export default function MinhasViagens() {
           </>
         ) : (
           <>
-            {opcaoSelecionada === "agendado" && tipoFiltro === "hoteis" && (
-              hospedagens.filter((item) => item.status === "agendado").length > 0 ? (
+            {opcaoSelecionada === "agendado" &&
+              tipoFiltro === "hoteis" &&
+              (hospedagens.filter((item) => item.status === "agendado").length >
+              0 ? (
                 hospedagens
                   .filter((item) => item.status === "agendado")
                   .map((item) => (
                     <BannerMinhasViagens
                       key={item.idHospedagem}
                       hotelData={item}
-                      onPress={() => console.log(`Detalhes do hotel: ${item.nome}`)}
                     />
                   ))
               ) : (
-                <Text style={styles.semItensTexto}>Nenhum hotel favoritado</Text>
-              )
-            )}
-            {opcaoSelecionada === "agendado" && tipoFiltro === "voos" && (
-              voos.filter((item) => item.status === "agendado").length > 0 ? (
+                <Text style={styles.semItensTexto}>
+                  Nenhuma hospedagem agendada
+                </Text>
+              ))}
+            {opcaoSelecionada === "agendado" &&
+              tipoFiltro === "voos" &&
+              (voos.filter((item) => item.status === "agendado").length > 0 ? (
                 voos
                   .filter((item) => item.status === "agendado")
                   .map((item) => (
                     <BannerMinhasViagensVoo
                       key={item.idReserva}
                       vooData={item}
-                      onPress={() => console.log(`Detalhes do voo: ${item.idReserva}`)}
                     />
                   ))
               ) : (
-                <Text style={styles.semItensTexto}>Nenhum voo favoritado</Text>
-              )
-            )}
-            {opcaoSelecionada === "finalizado" && tipoFiltro === "hoteis" && (
-              hospedagens.filter((item) => item.status === "finalizado").length > 0 ? (
+                <Text style={styles.semItensTexto}>Nenhum voo agendado</Text>
+              ))}
+            {opcaoSelecionada === "finalizado" &&
+              tipoFiltro === "hoteis" &&
+              (hospedagens.filter((item) => item.status === "finalizado")
+                .length > 0 ? (
                 hospedagens
                   .filter((item) => item.status === "finalizado")
                   .map((item) => (
                     <BannerMinhasViagens
                       key={item.idHospedagem}
                       hotelData={item}
-                      onPress={() => console.log(`Detalhes do hotel: ${item.nome}`)}
                     />
                   ))
               ) : (
-                <Text style={styles.semItensTexto}>Nenhum hotel favoritado</Text>
-              )
-            )}
-            {opcaoSelecionada === "finalizado" && tipoFiltro === "voos" && (
-              voos.filter((item) => item.status === "finalizado").length > 0 ? (
+                <Text style={styles.semItensTexto}>
+                  Nenhuma hospedagem finalizada
+                </Text>
+              ))}
+            {opcaoSelecionada === "finalizado" &&
+              tipoFiltro === "voos" &&
+              (voos.filter((item) => item.status === "finalizado").length >
+              0 ? (
                 voos
                   .filter((item) => item.status === "finalizado")
                   .map((item) => (
                     <BannerMinhasViagensVoo
                       key={item.idReserva}
                       vooData={item}
-                      onPress={() => console.log(`Detalhes do voo: ${item.idReserva}`)}
                     />
                   ))
               ) : (
-                <Text style={styles.semItensTexto}>Nenhum voo favoritado</Text>
-              )
-            )}
+                <Text style={styles.semItensTexto}>Nenhum voo finalizado</Text>
+              ))}
           </>
         )}
       </View>

@@ -1,21 +1,19 @@
-import { useNavigation } from '@react-navigation/native';
+import React, { useEffect } from "react";
+import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
-import React, { useEffect } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
-
-const Loading = ({ navigation : any }) => {
-  
+const Loading = ({ navigation: any }) => {
   const navigation = useNavigation();
   useEffect(() => {
     if (!navigation) {
-      console.error('Navigation não está definido');
+      console.error("Navigation não está definido");
       return;
     }
 
     const timer = setTimeout(() => {
       navigation.reset({
         index: 0,
-        routes: [{ name: 'index' }],
+        routes: [{ name: "index" }],
       });
     }, 2000);
 
@@ -33,12 +31,12 @@ const Loading = ({ navigation : any }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   message: {
     fontSize: 18,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 20,
   },
 });

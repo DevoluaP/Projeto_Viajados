@@ -1,13 +1,13 @@
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
   Keyboard,
   Modal,
-  Pressable,
   SafeAreaView,
   StatusBar,
   StyleSheet,
@@ -17,15 +17,14 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation } from "@react-navigation/native";
+import { verificarToken } from "../../functions/verificarToken";
 import deletar from "../../functions/deletar";
 import deslogar from "../../functions/deslogar";
-import { useNavigation } from "@react-navigation/native";
-import verificarToken from "../verificarToken";
 
 const defaultUserImage = require("../../assets/images/iconAccount.jpg");
 
@@ -40,7 +39,7 @@ const formatarData = (dataISO) => {
 
 const formatarCPF = (cpf) => {
   if (!cpf || cpf.length !== 11) return "Não informado";
-  return cpf.replace(/(\d unità{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+  return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
 };
 
 const formatarSexo = (sexo) => {
@@ -60,20 +59,26 @@ export default function MinhaConta() {
   const [novoNome, setNovoNome] = useState("");
   const [usuario, setUsuario] = useState(null);
   const [novaFoto, setNovaFoto] = useState(null);
+  const [removerFoto, setRemoverFoto] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [confirmDeleteModal, setConfirmDeleteModal] = useState(false);
-  const [configModalVisivel, setConfigModalVisivel] = useState(false); // Novo estado para o modal de configurações
+  const [configModalVisivel, setConfigModalVisivel] = useState(false);
+  const baseURL = process.env.EXPO_PUBLIC_API_URL;
 
   const handleLogout = () => {
     Alert.alert("Sair da conta", "Tem certeza que deseja sair?", [
       { text: "Cancelar", style: "cancel" },
-      { text: "Sim", style: "destructive", onPress: () => deslogar(navigation) },
+      {
+        text: "Sim",
+        style: "destructive",
+        onPress: () => deslogar(navigation),
+      },
     ]);
   };
 
   const handleDelete = () => {
     setConfirmDeleteModal(true);
-    setConfigModalVisivel(false); // Fecha o modal de configurações ao abrir o de confirmação
+    setConfigModalVisivel(false);
   };
 
   const confirmDelete = () => {
@@ -97,7 +102,7 @@ export default function MinhaConta() {
         setUsuarioId(idArmazenado);
 
         const response = await fetch(
-          `https://backend-viajados.vercel.app/api/alterardados/dadosusuario?idUsuario=${idArmazenado}`,
+          `${baseURL}/alterardados/dadosusuario?idUsuario=${idArmazenado}`,
           {
             method: "GET",
             headers: {
@@ -165,11 +170,29 @@ export default function MinhaConta() {
       }
 
       setNovaFoto(manipResult.base64);
+      setRemoverFoto(false);
     }
   };
 
+  const handleRemoverFoto = () => {
+    Alert.alert("Remover Foto", "Deseja remover sua foto de perfil?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Remover",
+        style: "destructive",
+        onPress: () => {
+          setNovaFoto(null);
+          setRemoverFoto(true);
+        },
+      },
+    ]);
+  };
+
   const handleSalvar = async () => {
-    if ((!novoNome.trim() || novoNome === usuario.nome) && !novaFoto) {
+    const nomeAlterado = novoNome.trim() && novoNome !== usuario.nome;
+    const fotoAlterada = novaFoto || removerFoto;
+
+    if (!nomeAlterado && !fotoAlterada) {
       Alert.alert("Aviso", "Nenhum dado foi alterado.");
       setModalVisivel(false);
       return;
@@ -177,10 +200,10 @@ export default function MinhaConta() {
 
     try {
       setIsLoading(true);
-      
-      if (novoNome.trim() && novoNome !== usuario.nome) {
+
+      if (nomeAlterado) {
         const responseNome = await fetch(
-          `https://backend-viajados.vercel.app/api/alterardados?idUsuario=${usuarioId}`,
+          `${baseURL}/alterardados?idUsuario=${usuarioId}`,
           {
             method: "PUT",
             headers: {
@@ -197,19 +220,23 @@ export default function MinhaConta() {
         }
       }
 
-      if (novaFoto && novaFoto !== usuario.foto_usuario) {
+      if (fotoAlterada) {
+        const fotoParaEnviar = removerFoto ? null : novaFoto;
+
         const payload = JSON.stringify({
           idUsuario: usuarioId,
-          foto_usuario: novaFoto,
+          foto_usuario: fotoParaEnviar,
         });
-        const payloadSize = (payload.length * 3) / 4 / 1024 / 1024;
 
-        if (payloadSize > 5) {
-          throw new Error("O tamanho da requisição excede o limite de 5 MB.");
+        if (!removerFoto) {
+          const payloadSize = (payload.length * 3) / 4 / 1024 / 1024;
+          if (payloadSize > 5) {
+            throw new Error("O tamanho da requisição excede o limite de 5 MB.");
+          }
         }
 
         const responseFoto = await fetch(
-          "https://backend-viajados.vercel.app/api/salvar-imagem",
+          `${baseURL}/salvar-imagem`,
           {
             method: "POST",
             headers: {
@@ -220,20 +247,7 @@ export default function MinhaConta() {
           }
         );
 
-        const responseText = await responseFoto.text();
-
-        let dataFoto;
-        try {
-          dataFoto = JSON.parse(responseText);
-        } catch (parseError) {
-          if (
-            responseText.trim() === "Foto do usuário cadastrada com sucesso!"
-          ) {
-            dataFoto = { mensagem: responseText };
-          } else {
-            throw new Error("Resposta inesperada do servidor: " + responseText);
-          }
-        }
+        const dataFoto = await responseFoto.json();
 
         if (!responseFoto.ok) {
           throw new Error(dataFoto.mensagem || "Erro ao atualizar a foto.");
@@ -242,10 +256,12 @@ export default function MinhaConta() {
 
       setUsuario((prev) => ({
         ...prev,
-        nome: novoNome.trim() && novoNome !== prev.nome ? novoNome : prev.nome,
-        foto_usuario: novaFoto || prev.foto_usuario,
+        nome: nomeAlterado ? novoNome : prev.nome,
+        foto_usuario: removerFoto ? null : (novaFoto || prev.foto_usuario)
       }));
+
       setNovaFoto(null);
+      setRemoverFoto(false);
       Alert.alert("Sucesso", "Dados atualizados com sucesso!");
       setModalVisivel(false);
     } catch (error) {
@@ -282,46 +298,43 @@ export default function MinhaConta() {
     );
   }
 
+  const getImageSource = () => {
+    if (removerFoto) return defaultUserImage;
+    if (novaFoto) return { uri: `data:image/jpeg;base64,${novaFoto}` };
+    if (usuario.foto_usuario) {
+      return {
+        uri: usuario.foto_usuario.startsWith("data:")
+          ? usuario.foto_usuario
+          : `data:image/jpeg;base64,${usuario.foto_usuario}`,
+      };
+    }
+    return defaultUserImage;
+  };
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#f8f8f8" />
-        
-        {/* Header */}
+
         <View style={styles.header}>
           <TouchableOpacity
-            style={styles.configButton} // Novo botão de configurações
+            style={styles.configButton}
             onPress={() => setConfigModalVisivel(true)}
           >
             <MaterialIcons name="settings" size={28} color="#D6005D" />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={handleLogout}
-          >
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <MaterialIcons name="logout" size={28} color="#D6005D" />
           </TouchableOpacity>
         </View>
-        
-        {/* Profile Card */}
+
         <View style={styles.profileCard}>
           <LinearGradient
-            colors={['#D6005D', '#FF3B8B']}
+            colors={["#D6005D", "#FF3B8B"]}
             style={styles.profileHeader}
           >
             <View style={styles.profileImageContainer}>
-              <Image
-                source={
-                  usuario.foto_usuario
-                    ? {
-                        uri: usuario.foto_usuario.startsWith("data:")
-                          ? usuario.foto_usuario
-                          : `data:image/jpeg;base64,${usuario.foto_usuario}`
-                      }
-                    : defaultUserImage
-                }
-                style={styles.profileImage}
-              />
+              <Image source={getImageSource()} style={styles.profileImage} />
               <View style={styles.editProfileButton}>
                 <TouchableOpacity onPress={() => setModalVisivel(true)}>
                   <MaterialIcons name="edit" size={22} color="white" />
@@ -330,19 +343,28 @@ export default function MinhaConta() {
             </View>
             <Text style={styles.profileName}>{usuario.nome}</Text>
           </LinearGradient>
-          
-          {/* Info Section */}
+
           <View style={styles.infoSection}>
             <InfoItem icon="fingerprint" label="CPF" value={usuario.cpf} />
-            <InfoItem icon="cake" label="Data de Nascimento" value={usuario.data_nascimento} />
-            <InfoItem icon="public" label="Nacionalidade" value={usuario.nacionalidade} />
-            <InfoItem icon="person" label="Sexo" value={usuario.sexo} lastItem />
+            <InfoItem
+              icon="cake"
+              label="Data de Nascimento"
+              value={usuario.data_nascimento}
+            />
+            <InfoItem
+              icon="public"
+              label="Nacionalidade"
+              value={usuario.nacionalidade}
+            />
+            <InfoItem
+              icon="person"
+              label="Sexo"
+              value={usuario.sexo}
+              lastItem
+            />
           </View>
         </View>
-        
 
-        
-        {/* Edit Profile Modal */}
         <Modal
           visible={modalVisivel}
           animationType="slide"
@@ -356,37 +378,51 @@ export default function MinhaConta() {
                   <Text style={styles.modalTitle}>Editar Perfil</Text>
                   <TouchableOpacity
                     style={styles.closeButton}
-                    onPress={() => setModalVisivel(false)}
+                    onPress={() => {
+                      setModalVisivel(false);
+                      setNovaFoto(null);
+                      setRemoverFoto(false);
+                    }}
                   >
                     <MaterialIcons name="close" size={28} color="#333" />
                   </TouchableOpacity>
                 </View>
-                
+
                 <TouchableOpacity
                   style={styles.photoSelector}
                   onPress={selecionarFoto}
                   activeOpacity={0.8}
                 >
-                  <Image
-                    source={
-                      novaFoto
-                        ? { uri: `data:image/jpeg;base64,${novaFoto}` }
-                        : usuario.foto_usuario
-                        ? {
-                            uri: usuario.foto_usuario.startsWith("data:")
-                              ? usuario.foto_usuario
-                              : `data:image/jpeg;base64,${usuario.foto_usuario}`
-                          }
-                        : defaultUserImage
-                    }
-                    style={styles.modalPhoto}
-                  />
+                  <Image source={getImageSource()} style={styles.modalPhoto} />
                   <View style={styles.photoOverlay}>
                     <MaterialIcons name="camera-alt" size={28} color="white" />
                     <Text style={styles.photoText}>Alterar foto</Text>
                   </View>
                 </TouchableOpacity>
-                
+
+                {(usuario.foto_usuario || novaFoto) && !removerFoto && (
+                  <TouchableOpacity
+                    style={styles.removePhotoButton}
+                    onPress={handleRemoverFoto}
+                  >
+                    <MaterialIcons
+                      name="delete-outline"
+                      size={20}
+                      color="#D6005D"
+                    />
+                    <Text style={styles.removePhotoText}>Remover foto</Text>
+                  </TouchableOpacity>
+                )}
+
+                {removerFoto && (
+                  <View style={styles.removePhotoInfo}>
+                    <MaterialIcons name="info-outline" size={18} color="#666" />
+                    <Text style={styles.removePhotoInfoText}>
+                      A foto será removida ao salvar
+                    </Text>
+                  </View>
+                )}
+
                 <View style={styles.inputContainer}>
                   <Text style={styles.inputLabel}>Nome</Text>
                   <TextInput
@@ -397,7 +433,7 @@ export default function MinhaConta() {
                     placeholderTextColor="#999"
                   />
                 </View>
-                
+
                 <TouchableOpacity
                   style={styles.saveButton}
                   onPress={handleSalvar}
@@ -409,8 +445,7 @@ export default function MinhaConta() {
             </View>
           </TouchableWithoutFeedback>
         </Modal>
-        
-        {/* Config Modal */}
+
         <Modal
           visible={configModalVisivel}
           animationType="slide"
@@ -428,19 +463,22 @@ export default function MinhaConta() {
                   <MaterialIcons name="close" size={28} color="#333" />
                 </TouchableOpacity>
               </View>
-              
+
               <TouchableOpacity
                 style={styles.deleteButtonModal}
                 onPress={handleDelete}
               >
-                <MaterialIcons name="delete-outline" size={22} color="#D6005D" />
+                <MaterialIcons
+                  name="delete-outline"
+                  size={22}
+                  color="#D6005D"
+                />
                 <Text style={styles.deleteButtonTextModal}>Excluir Conta</Text>
               </TouchableOpacity>
             </View>
           </View>
         </Modal>
-        
-        {/* Confirm Delete Modal */}
+
         <Modal
           visible={confirmDeleteModal}
           transparent={true}
@@ -451,16 +489,17 @@ export default function MinhaConta() {
               <Ionicons name="warning" size={60} color="#D6005D" />
               <Text style={styles.confirmModalTitle}>Excluir conta</Text>
               <Text style={styles.confirmModalText}>
-                Esta ação não pode ser desfeita. Todos os seus dados serão removidos permanentemente.
+                Esta ação não pode ser desfeita. Todos os seus dados serão
+                removidos permanentemente.
               </Text>
               <View style={styles.confirmModalButtons}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.cancelButton}
                   onPress={() => setConfirmDeleteModal(false)}
                 >
                   <Text style={styles.cancelButtonText}>Cancelar</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.confirmButton}
                   onPress={confirmDelete}
                 >
@@ -479,7 +518,12 @@ const InfoItem = ({ icon, label, value, lastItem = false }) => {
   return (
     <View style={[styles.infoItem, !lastItem && styles.infoItemBorder]}>
       <View style={styles.infoLabel}>
-        <MaterialIcons name={icon} size={22} color="#D6005D" style={styles.infoIcon} />
+        <MaterialIcons
+          name={icon}
+          size={22}
+          color="#D6005D"
+          style={styles.infoIcon}
+        />
         <Text style={styles.infoLabelText}>{label}</Text>
       </View>
       <Text style={styles.infoValue}>{value}</Text>
@@ -528,8 +572,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  
-  // Header
   header: {
     flexDirection: "row",
     justifyContent: "flex-end",
@@ -540,12 +582,10 @@ const styles = StyleSheet.create({
   logoutButton: {
     padding: 8,
   },
-  configButton: { // Estilo do novo botão de configurações
+  configButton: {
     padding: 8,
-    marginRight: 10, // Espaço entre o ícone de config e o logout
+    marginRight: 10,
   },
-  
-  // Profile Card
   profileCard: {
     backgroundColor: "white",
     borderRadius: 15,
@@ -556,7 +596,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    marginTop:30
+    marginTop: 30,
   },
   profileHeader: {
     padding: 20,
@@ -590,8 +630,6 @@ const styles = StyleSheet.create({
     color: "white",
     marginBottom: 5,
   },
-  
-  // Info Section
   infoSection: {
     padding: 15,
   },
@@ -621,29 +659,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#666",
   },
-  
-  // Account Actions
-  accountActions: {
-    marginTop: 30,
-    paddingHorizontal: 20,
-  },
-  deleteButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFF0F4",
-    borderWidth: 1,
-    borderColor: "#D6005D20",
-    paddingVertical: 12,
-    borderRadius: 10,
-  },
-  deleteButtonText: {
-    color: "#D6005D",
-    fontWeight: "600",
-    marginLeft: 8,
-  },
-  
-  // Edit Profile Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
@@ -698,6 +713,39 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginTop: 8,
   },
+  removePhotoButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 20,
+    marginTop: 10,
+    paddingVertical: 10,
+    backgroundColor: "#FFF0F4",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#D6005D20",
+  },
+  removePhotoText: {
+    color: "#D6005D",
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 8,
+  },
+  removePhotoInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 20,
+    marginTop: 10,
+    paddingVertical: 8,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 8,
+  },
+  removePhotoInfoText: {
+    color: "#666",
+    fontSize: 13,
+    marginLeft: 6,
+  },
   inputContainer: {
     padding: 20,
   },
@@ -727,8 +775,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
   },
-  
-  // Config Modal
   deleteButtonModal: {
     flexDirection: "row",
     alignItems: "center",
@@ -746,8 +792,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: 8,
   },
-  
-  // Confirm Delete Modal
   confirmModalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",

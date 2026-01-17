@@ -1,8 +1,8 @@
+import React, { useState } from "react";
 import {
   Alert,
-  Dimensions,
-  FlatList,
   Image,
+  ImageSourcePropType,
   Keyboard,
   Modal,
   SafeAreaView,
@@ -13,23 +13,23 @@ import {
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View
+  View,
 } from "react-native";
-import React, { useRef, useState } from "react";
-
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MaterialIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const { width: screenWidth } = Dimensions.get("window");
+type ModalVooProps = {
+  visible: boolean;
+  voo: any;
+  onClose: () => void;
+  imagemVoo?: ImageSourcePropType;
+};
 
-const ModalVoo = ({ visible, voo, onClose }) => {
+const ModalVoo = ({ visible, voo, onClose, imagemVoo }: ModalVooProps) => {
   const [modalReservaVisible, setModalReservaVisible] = useState(false);
   const [dataReserva, setDataReserva] = useState("");
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const imageScrollViewRef = useRef(null);
 
   if (!visible || !voo) return null;
-  
 
   const reservarVoo = async () => {
     try {
@@ -43,15 +43,21 @@ const ModalVoo = ({ visible, voo, onClose }) => {
 
       const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
       if (!dateRegex.test(dataReserva)) {
-        Alert.alert("Erro", "Por favor, insira a data no formato DD/MM/YYYY (ex.: 10/04/2025).");
+        Alert.alert(
+          "Erro",
+          "Por favor, insira a data no formato DD/MM/YYYY (ex.: 10/04/2025)."
+        );
         return;
       }
 
       const [dia, mes, ano] = dataReserva.split("/");
-      const formattedDataReserva = `${ano}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")} 08:00:00`;
+      const formattedDataReserva = `${ano}-${mes.padStart(
+        2,
+        "0"
+      )}-${dia.padStart(2, "0")} 08:00:00`;
 
       const reservaDate = new Date(`${ano}-${mes}-${dia}T08:00:00.000Z`);
-      if (isNaN(reservaDate)) {
+      if (isNaN(reservaDate.getTime())) {
         Alert.alert("Erro", "Data inválida. Verifique os valores inseridos.");
         return;
       }
@@ -62,37 +68,17 @@ const ModalVoo = ({ visible, voo, onClose }) => {
         data_reserva: formattedDataReserva,
       };
 
-      console.log("Enviando requisição com body:", JSON.stringify(requestBody));
-      console.log("Token:", token);
-      console.log("URL:", "https://backend-viajados.vercel.app/api/reservas/voos");
+      const baseURL = process.env.EXPO_PUBLIC_API_URL;
+      const response = await fetch(`${baseURL}/reservas/voos`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
 
-      const response = await fetch(
-        "https://backend-viajados.vercel.app/api/reservas/voos",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(requestBody),
-        }
-      );
-
-      console.log("Status da resposta:", response.status);
-      const responseText = await response.text();
-      console.log("Resposta do servidor (bruta):", responseText);
-
-      let result;
-      try {
-        result = JSON.parse(responseText);
-      } catch (parseError) {
-        Alert.alert(
-          "Erro no servidor",
-          `Não foi possível processar a resposta. Status: ${response.status}. Veja o console para detalhes.`
-        );
-        console.error("Erro ao parsear JSON:", parseError);
-        return;
-      }
+      const result = await response.json();
 
       if (response.ok) {
         Alert.alert("Sucesso", "Reserva realizada com sucesso!");
@@ -112,7 +98,10 @@ const ModalVoo = ({ visible, voo, onClose }) => {
 
     let formatted = "";
     if (cleaned.length > 4) {
-      formatted = `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}/${cleaned.slice(4)}`;
+      formatted = `${cleaned.slice(0, 2)}/${cleaned.slice(
+        2,
+        4
+      )}/${cleaned.slice(4)}`;
     } else if (cleaned.length > 2) {
       formatted = `${cleaned.slice(0, 2)}/${cleaned.slice(2)}`;
     } else {
@@ -120,24 +109,6 @@ const ModalVoo = ({ visible, voo, onClose }) => {
     }
 
     setter(formatted);
-  };
-
-  const renderImageDot = (index) => (
-    <View
-      key={index}
-      style={[
-        styles.imageDot,
-        currentImageIndex === index && styles.imageDotActive,
-      ]}
-    />
-  );
-
-  const handleScroll = (event) => {
-    if (!voo.imagens || !Array.isArray(voo.imagens) || voo.imagens.length === 0) return;
-
-    const contentOffsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(contentOffsetX / screenWidth);
-    setCurrentImageIndex(index);
   };
 
   const renderAmenity = (icon, text) => (
@@ -156,68 +127,64 @@ const ModalVoo = ({ visible, voo, onClose }) => {
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <SafeAreaView style={styles.safeArea}>
-          <StatusBar barStyle="light-content" backgroundColor="rgba(0,0,0,0.5)" />
+          <StatusBar
+            barStyle="light-content"
+            backgroundColor="rgba(0,0,0,0.5)"
+          />
 
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
-              {/* Header */}
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>
-                  {voo.origem && voo.destino ? `${voo.origem} → ${voo.destino}` : voo.destino || "Destino não informado"}
+                  {voo.origem && voo.destino
+                    ? `${voo.origem} → ${voo.destino}`
+                    : voo.destino || "Destino não informado"}
                 </Text>
                 <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                   <MaterialIcons name="close" size={28} color="#333" />
                 </TouchableOpacity>
               </View>
 
-              <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                {/* Imagens */}
+              <ScrollView
+                style={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+              >
                 <View style={styles.imageContainer}>
-                  <ScrollView
-                    ref={imageScrollViewRef}
-                    horizontal
-                    pagingEnabled
-                    showsHorizontalScrollIndicator={false}
-                    onScroll={handleScroll}
-                    scrollEventThrottle={16}
-                  >
-                    {voo.imagens && Array.isArray(voo.imagens) && voo.imagens.length > 0 ? (
-                      voo.imagens.map((image, index) => (
-                        <Image
-                          key={index}
-                          source={{ uri: image }}
-                          style={styles.vooImage}
-                        />
-                      ))
-                    ) : (
-                      <View style={styles.noImageContainer}>
-                        <MaterialIcons name="image-not-supported" size={60} color="#ddd" />
-                        <Text style={styles.noImageText}>Imagens não disponíveis</Text>
-                      </View>
-                    )}
-                  </ScrollView>
-
-                  {/* Indicadores de imagem */}
-                  {voo.imagens && Array.isArray(voo.imagens) && voo.imagens.length > 0 && (
-                    <View style={styles.imageDotContainer}>
-                      {voo.imagens.map((_, index) => renderImageDot(index))}
+                  {imagemVoo ? (
+                    <Image
+                      source={imagemVoo}
+                      style={styles.vooImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={styles.noImageContainer}>
+                      <MaterialIcons
+                        name="image-not-supported"
+                        size={60}
+                        color="#ddd"
+                      />
+                      <Text style={styles.noImageText}>
+                        Imagem não disponível
+                      </Text>
                     </View>
                   )}
                 </View>
 
-                {/* Preço */}
                 <View style={styles.detailsHeader}>
                   <View style={styles.priceTag}>
                     <Text style={styles.priceLabel}>Preço</Text>
-                    <Text style={styles.priceValue}>R$ {parseFloat(voo.preco).toFixed(2)}</Text>
+                    <Text style={styles.priceValue}>
+                      R$ {parseFloat(voo.preco).toFixed(2)}
+                    </Text>
                   </View>
                   <View style={styles.dateInfo}>
                     <Text style={styles.dateInfoLabel}>Data:</Text>
-                    <Text style={styles.dateInfoValue}>Consultar Disponibilidade</Text>
+                    <Text style={styles.dateInfoValue}>
+                      Consultar Disponibilidade
+                    </Text>
                   </View>
                 </View>
 
-                {/* Amenidades */}
                 <View style={styles.sectionContainer}>
                   <Text style={styles.sectionTitle}>O que o voo oferece</Text>
                   <View style={styles.amenitiesContainer}>
@@ -228,7 +195,6 @@ const ModalVoo = ({ visible, voo, onClose }) => {
                   </View>
                 </View>
 
-                {/* Botão Reservar */}
                 <TouchableOpacity
                   style={styles.reserveButton}
                   onPress={() => setModalReservaVisible(true)}
@@ -239,8 +205,11 @@ const ModalVoo = ({ visible, voo, onClose }) => {
             </View>
           </View>
 
-          {/* Modal de Reserva */}
-          <Modal visible={modalReservaVisible} animationType="slide" transparent>
+          <Modal
+            visible={modalReservaVisible}
+            animationType="slide"
+            transparent
+          >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
               <View style={styles.reserveModalContainer}>
                 <View style={styles.reserveModalContent}>
@@ -256,7 +225,9 @@ const ModalVoo = ({ visible, voo, onClose }) => {
 
                   <View style={styles.vooInfoCard}>
                     <Text style={styles.vooInfoName}>
-                      {voo.origem && voo.destino ? `${voo.origem} → ${voo.destino}` : voo.destino || "Destino não informado"}
+                      {voo.origem && voo.destino
+                        ? `${voo.origem} → ${voo.destino}`
+                        : voo.destino || "Destino não informado"}
                     </Text>
                     <Text style={styles.vooInfoPrice}>
                       R$ {parseFloat(voo.preco).toFixed(2)}
@@ -269,11 +240,18 @@ const ModalVoo = ({ visible, voo, onClose }) => {
                     <View style={styles.dateInput}>
                       <Text style={styles.dateInputLabel}>Data da reserva</Text>
                       <View style={styles.dateInputContainer}>
-                        <MaterialIcons name="event" size={20} color="#666" style={styles.dateInputIcon} />
+                        <MaterialIcons
+                          name="event"
+                          size={20}
+                          color="#666"
+                          style={styles.dateInputIcon}
+                        />
                         <TextInput
                           style={styles.dateInputField}
                           value={dataReserva}
-                          onChangeText={(text) => formatarDataInput(text, setDataReserva)}
+                          onChangeText={(text) =>
+                            formatarDataInput(text, setDataReserva)
+                          }
                           placeholder="DD/MM/AAAA"
                           placeholderTextColor="#999"
                           keyboardType="numeric"
@@ -286,12 +264,16 @@ const ModalVoo = ({ visible, voo, onClose }) => {
                   <View style={styles.priceSummary}>
                     <View style={styles.summaryRow}>
                       <Text style={styles.summaryLabel}>Valor da passagem</Text>
-                      <Text style={styles.summaryValue}>R$ {parseFloat(voo.preco).toFixed(2)}</Text>
+                      <Text style={styles.summaryValue}>
+                        R$ {parseFloat(voo.preco).toFixed(2)}
+                      </Text>
                     </View>
                     <View style={styles.summaryDivider} />
                     <View style={styles.summaryRow}>
                       <Text style={styles.totalLabel}>Valor total</Text>
-                      <Text style={styles.totalValue}>R$ {parseFloat(voo.preco).toFixed(2)}</Text>
+                      <Text style={styles.totalValue}>
+                        R$ {parseFloat(voo.preco).toFixed(2)}
+                      </Text>
                     </View>
                   </View>
 
@@ -355,6 +337,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#333",
+    flex: 1,
   },
   closeButton: {
     padding: 4,
@@ -364,15 +347,13 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     height: 240,
-    position: "relative",
   },
   vooImage: {
-    width: screenWidth * 0.9,
+    width: "100%",
     height: 240,
-    resizeMode: "cover",
   },
   noImageContainer: {
-    width: screenWidth * 0.9,
+    width: "100%",
     height: 240,
     backgroundColor: "#f5f5f5",
     justifyContent: "center",
@@ -382,26 +363,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: "#999",
     fontSize: 16,
-  },
-  imageDotContainer: {
-    position: "absolute",
-    bottom: 15,
-    width: "100%",
-    flexDirection: "row",
-    justifyContent: "center",
-  },
-  imageDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.5)",
-    marginHorizontal: 4,
-  },
-  imageDotActive: {
-    backgroundColor: "#fff",
-    width: 10,
-    height: 10,
-    borderRadius: 5,
   },
   detailsHeader: {
     flexDirection: "row",

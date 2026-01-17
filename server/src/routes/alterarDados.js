@@ -1,12 +1,10 @@
 const express = require("express");
 const db = require("../db/conn.js");
-
 const router = express.Router();
 
 router.put("/", async (req, res) => {
-    const idUsuario = req.query.idUsuario; 
-    const { nome } = req.body; 
-
+    const { nome } = req.body;
+    const idUsuario = req.query.idUsuario;
     if (!idUsuario) {
         return res.status(400).send({ message: "idUsuario é obrigatório" });
     }
@@ -15,7 +13,6 @@ router.put("/", async (req, res) => {
 
     try {
         const [result] = await db.query(queryAlterarDadosUsuario, [nome, idUsuario]);
-        
         if (result.affectedRows === 0) {
             return res.status(404).send({ message: "Usuário não encontrado" });
         }
@@ -29,7 +26,6 @@ router.put("/", async (req, res) => {
 
 router.put("/excluir", async (req, res) => {
     const idUsuario = req.query.idUsuario; 
-
     if (!idUsuario) {
         return res.status(400).send({ message: "idUsuario é obrigatório" });
     }
@@ -38,7 +34,6 @@ router.put("/excluir", async (req, res) => {
 
     try {
         const [result] = await db.query(queryAlterarStatusUsuario, [idUsuario]);
-        
         if (result.affectedRows === 0) {
             return res.status(404).send({ message: "Usuário não encontrado" });
         }
@@ -52,21 +47,24 @@ router.put("/excluir", async (req, res) => {
 
 router.get("/dadosusuario", async (req, res) => {
     const idUsuario = req.query.idUsuario; 
-
     if (!idUsuario) {
         return res.status(400).send({ message: "idUsuario é obrigatório" });
     }
 
-    const queryDadosUsuario = "SELECT nome, cpf, data_nascimento, nacionalidade,sexo, foto_usuario FROM usuario WHERE idUsuario = ?";
+    const queryDadosUsuario = "SELECT nome, cpf, data_nascimento, nacionalidade, sexo, foto_usuario FROM usuario WHERE idUsuario = ?";
 
     try {
         const [result] = await db.query(queryDadosUsuario, [idUsuario]);
-        
         if (result.affectedRows === 0) {
             return res.status(404).send({ message: "Dados de usuário não encontrado" });
         }
+
+        const usuario = result[0];
+        if (usuario.foto_usuario) {
+            usuario.foto_usuario = usuario.foto_usuario.toString('base64');
+        }
         
-        res.json(result);
+        res.json([usuario]);
     } catch (err) {
         console.error('Erro ao buscar dados do usuário:', err);
         res.status(500).send({ message: "Erro interno ao buscar dados do usuário" });

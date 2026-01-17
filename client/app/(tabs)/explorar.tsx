@@ -1,3 +1,4 @@
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -10,7 +11,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useCallback, useEffect, useState } from "react";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -18,7 +18,8 @@ import BannerHotel from "@/components/Banner-Hotel/BannerHotel";
 import BannerVoo from "@/components/Banner-Voo/BannerVoo";
 import ModalHotel from "@/components/Modal/ModalHotel";
 import ModalVoo from "@/components/Modal/ModalVoo";
-import verificarToken from "../verificarToken";
+import { verificarToken } from "../../functions/verificarToken";
+import { getHotelImage, getVooImage } from '../../imageMapper';
 
 export default function Explorar() {
   const [opcaoSelecionada, setOpcaoSelecionada] = useState("hoteis");
@@ -35,7 +36,8 @@ export default function Explorar() {
   const [isLoading, setIsLoading] = useState(true);
   const [favoritandoIds, setFavoritandoIds] = useState({});
   const [notificacao, setNotificacao] = useState(null);
-  const [termoPesquisa, setTermoPesquisa] = useState(""); 
+  const [termoPesquisa, setTermoPesquisa] = useState("");
+  const baseURL = process.env.EXPO_PUBLIC_API_URL;
 
   const navigation = useNavigation();
 
@@ -43,7 +45,7 @@ export default function Explorar() {
     verificarToken(navigation);
   }, [navigation]);
 
-  const carregarFavoritos = async (token, usuarioId) => {
+  const carregarFavoritos = async (token: string, usuarioId: string) => {
     try {
       const favoritosCache = await AsyncStorage.getItem(
         `favoritos_${usuarioId}`
@@ -55,7 +57,7 @@ export default function Explorar() {
       const novosFavoritos = {};
 
       const respostaHoteis = await fetch(
-        `https://backend-viajados.vercel.app/api/favoritos/hoteis?idUsuario=${usuarioId}`,
+        `${baseURL}/favoritos/hoteis?idUsuario=${usuarioId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -66,14 +68,14 @@ export default function Explorar() {
       if (respostaHoteis.ok) {
         const hoteisFavoritos = await respostaHoteis.json();
         if (Array.isArray(hoteisFavoritos)) {
-          hoteisFavoritos.forEach((hotel) => {
-            novosFavoritos[`hotel_${hotel.idHoteis}`] = true;
+          hoteisFavoritos.forEach((hotel: { idHoteis: string | number }) => {
+            (novosFavoritos as Record<string, boolean>)[`hotel_${hotel.idHoteis}`] = true;
           });
         }
       }
 
       const respostaVoos = await fetch(
-        `https://backend-viajados.vercel.app/api/favoritos/voos?idUsuario=${usuarioId}`,
+        `${baseURL}/favoritos/voos?idUsuario=${usuarioId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -84,8 +86,8 @@ export default function Explorar() {
       if (respostaVoos.ok) {
         const voosFavoritos = await respostaVoos.json();
         if (Array.isArray(voosFavoritos)) {
-          voosFavoritos.forEach((voo) => {
-            novosFavoritos[`voo_${voo.idVoos}`] = true;
+          voosFavoritos.forEach((voo: { idVoos: string | number }) => {
+            (novosFavoritos as Record<string, boolean>)[`voo_${voo.idVoos}`] = true;
           });
         }
       }
@@ -95,12 +97,16 @@ export default function Explorar() {
         JSON.stringify(novosFavoritos)
       );
       setFavoritos(novosFavoritos);
-    } catch (error) {
-      console.error("Erro ao carregar favoritos:", error.message || error);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Erro ao carregar favoritos:", error.message);
+      } else {
+        console.error("Erro ao carregar favoritos:", error);
+      }
     }
   };
 
-  const toggleFavorito = async (id, tipo) => {
+  const toggleFavorito = async (id: string | number, tipo: string) => {
     const chave = `${tipo}_${id}`;
     try {
       setFavoritandoIds((prev) => ({ ...prev, [chave]: true }));
@@ -109,17 +115,15 @@ export default function Explorar() {
 
       if (!token || !usuarioId) {
         console.error("Token ou ID do usuário não encontrado");
-        setNotificacao("Erro: Faça login novamente");
+        setNotificacao(() => "Erro: Faça login novamente");
         setTimeout(() => setNotificacao(null), 3000);
         return;
       }
 
-      const estaFavoritado = favoritos[chave];
-      const url = `https://backend-viajados.vercel.app/api/favoritos/${
+      const estaFavoritado = (favoritos as Record<string, boolean>)[chave];
+      const url = `${baseURL}/favoritos/${
         tipo === "hotel" ? "hoteis" : "voos"
       }`;
-
-      console.log("Antes de favoritar:", { id, tipo, estaFavoritado });
 
       const response = await fetch(url, {
         method: estaFavoritado ? "DELETE" : "POST",
@@ -145,7 +149,6 @@ export default function Explorar() {
           : "Voo foi adicionado aos favoritos!";
         setNotificacao(mensagem);
         setTimeout(() => setNotificacao(null), 3000);
-        console.log("Depois de favoritar:", favoritos);
       } else {
         let errorMessage = "Erro desconhecido";
         try {
@@ -183,7 +186,7 @@ export default function Explorar() {
       if (nome) setNomeUsuario(nome);
 
       const respostaUsuario = await fetch(
-        `https://backend-viajados.vercel.app/api/alterardados/dadosusuario?idUsuario=${usuarioId}`,
+        `${baseURL}/alterardados/dadosusuario?idUsuario=${usuarioId}`,
         {
           method: "GET",
           headers: {
@@ -231,7 +234,7 @@ export default function Explorar() {
       await carregarFavoritos(token, usuarioId);
 
       const respostaHoteis = await fetch(
-        "https://backend-viajados.vercel.app/api/hoteis",
+        `${baseURL}/hoteis`,
         {
           method: "GET",
           headers: {
@@ -249,7 +252,7 @@ export default function Explorar() {
       }
 
       const respostaVoos = await fetch(
-        "https://backend-viajados.vercel.app/api/voos",
+        `${baseURL}/voos`,
         {
           method: "GET",
           headers: {
@@ -276,22 +279,22 @@ export default function Explorar() {
     }, [])
   );
 
-  const opcaoPressionada = (opcao) => {
+  const opcaoPressionada = (opcao: string) => {
     setOpcaoSelecionada(opcao);
     setTermoPesquisa("");
   };
 
-  const bannerHotelPressionado = (hotel) => {
+  const bannerHotelPressionado = (hotel: any) => {
     setHotelSelecionado(hotel);
     setModalHotelVisivel(true);
   };
 
-  const bannerVooPressionado = (voo) => {
+  const bannerVooPressionado = (voo: any) => {
     setVooSelecionado(voo);
     setModalVooVisivel(true);
   };
 
-  const formatarData = (dataISO) => {
+  const formatarData = (dataISO: string) => {
     const data = new Date(dataISO);
     const dia = String(data.getDate()).padStart(2, "0");
     const mes = String(data.getMonth() + 1).padStart(2, "0");
@@ -299,10 +302,9 @@ export default function Explorar() {
     return `${dia}/${mes}/${ano}`;
   };
 
-  // Função para filtrar hotéis e voos
-  const filtrarDados = (dados, tipo) => {
+  const filtrarDados = (dados: any[], tipo: string) => {
     if (!termoPesquisa) return dados;
-    return dados.filter((item) => {
+    return dados.filter((item: any) => {
       if (tipo === "hoteis") {
         return item.nome.toLowerCase().includes(termoPesquisa.toLowerCase());
       } else {
@@ -326,13 +328,14 @@ export default function Explorar() {
         visible={modalHotelVisivel}
         hotel={hotelSelecionado}
         onClose={() => setModalHotelVisivel(false)}
+        imagemHotel={getHotelImage(hotelSelecionado?.idHoteis)}
       />
 
       <ModalVoo
         visible={modalVooVisivel}
         voo={vooSelecionado}
         onClose={() => setModalVooVisivel(false)}
-        formatarData={formatarData}
+        imagemVoo={getVooImage(vooSelecionado?.idVoos)}
       />
 
       <StatusBar
@@ -347,7 +350,7 @@ export default function Explorar() {
               source={
                 fotoUsuario
                   ? { uri: fotoUsuario }
-                  : require("../../assets/images/iconAccount.jpg")
+                  : require("../../assets/images/user-icon.png")
               }
               style={styles.avatar}
             />
@@ -355,7 +358,7 @@ export default function Explorar() {
               <Text style={styles.saudacao}>
                 Olá, {nomeUsuario || "Usuário"}
               </Text>
-              <Text style={styles.texto}>Bem-vindo de volta!</Text>
+              <Text style={styles.texto}>Promoções e ofertas especiais para você!</Text>
             </View>
           </View>
         </TouchableOpacity>
@@ -363,8 +366,6 @@ export default function Explorar() {
         <View style={styles.containerExplorar}>
           <Text style={styles.titulo}>Explorar</Text>
           <Text style={styles.subTitulo}>Descubra novos lugares</Text>
-
-          {/* Barra de pesquisa */}
           <TextInput
             style={styles.barraPesquisa}
             placeholder={
@@ -387,7 +388,8 @@ export default function Explorar() {
               <Text
                 style={[
                   styles.textoFiltro,
-                  opcaoSelecionada === "hoteis" && styles.textoFiltroSelecionado,
+                  opcaoSelecionada === "hoteis" &&
+                    styles.textoFiltroSelecionado,
                 ]}
               >
                 Hotéis
@@ -411,10 +413,7 @@ export default function Explorar() {
             </Pressable>
           </View>
 
-          <View
-          
-            style={styles.carrossel}
-          >
+          <View style={styles.carrossel}>
             {opcaoSelecionada === "voos" && (
               <>
                 {isLoading ? (
@@ -426,11 +425,7 @@ export default function Explorar() {
                   filtrarDados(voos, "voos").map((voo, index) => (
                     <BannerVoo
                       key={`voo_${voo.idVoos}_${index}`}
-                      imagem={
-                        voo.imagens && voo.imagens[0]
-                          ? { uri: voo.imagens[0] }
-                          : require("../../assets/images/defaultImage.jpg")
-                      }
+                      imagem={getVooImage(voo.idVoos)}
                       destino={voo.destino || "Destino não informado"}
                       origem={voo.origem || "Origem não informada"}
                       descricao={voo.descricao || "Sem descrição"}
@@ -459,18 +454,16 @@ export default function Explorar() {
                   filtrarDados(hoteis, "hoteis").map((hotel, index) => (
                     <BannerHotel
                       key={`hotel_${hotel.idHoteis}_${index}`}
-                      imagem={
-                        hotel.imagens && hotel.imagens[0]
-                          ? { uri: hotel.imagens[0] }
-                          : require("../../assets/images/defaultImage.jpg")
-                      }
+                      imagem={getHotelImage(hotel.idHoteis)}
                       nome={hotel.nome || "Hotel sem nome"}
                       descricao={hotel.descricao || "Sem descrição"}
                       avaliacao={hotel.avaliacao || 0}
                       preco={hotel.preco_diaria || "Preço não disponível"}
                       onPress={() => bannerHotelPressionado(hotel)}
                       favorito={favoritos[`hotel_${hotel.idHoteis}`] || false}
-                      onFavoritar={() => toggleFavorito(hotel.idHoteis, "hotel")}
+                      onFavoritar={() =>
+                        toggleFavorito(hotel.idHoteis, "hotel")
+                      }
                       isLoading={favoritandoIds[`hotel_${hotel.idHoteis}`]}
                     />
                   ))
@@ -479,8 +472,6 @@ export default function Explorar() {
                 )}
               </>
             )}
-
-            
           </View>
         </View>
       </ScrollView>
@@ -531,7 +522,6 @@ const styles = StyleSheet.create({
   },
   containerExplorar: {
     marginVertical: 20,
-  
   },
   titulo: {
     fontSize: 22,
@@ -548,7 +538,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     backgroundColor: "#fff",
     fontSize: 16,
- 
   },
   filtroBusca: {
     flexDirection: "row",
@@ -572,20 +561,19 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   carrossel: {
-    display:"flex",
+    display: "flex",
     flexDirection: "column",
-    marginBottom: 13, 
-    width:"100%",
-    justifyContent:"center",
-    alignContent:'center',
-    gap:15
+    marginBottom: 13,
+    width: "100%",
+    justifyContent: "center",
+    alignContent: "center",
+    gap: 15,
   },
   containerMensagem: {
-  width:"100%",
-  display:"flex",
-  justifyContent:"center",
-  marginTop:50
-  
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    marginTop: 50,
   },
   mensagem: {
     fontSize: 16,

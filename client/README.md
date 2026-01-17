@@ -1,12 +1,10 @@
 # Front-end Viajados
 
 ## Funcionalidades
-- Reservar Hotéis
-- Reservar Voos
-- Favoritar Voos
-- Favoritar Hotéis
-- Adicionar foto ao perfil
-- Alterar nome de usuário
+- Reservar Hotéis/Voos
+- Favoritar Hotéis/Voos
+- Alterar nome
+- Adicionar foto de perfil
 
 ## Tecnologias Usadas
 - React Native

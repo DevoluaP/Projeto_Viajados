@@ -8,59 +8,57 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 import Button from "../components/Button";
 import Input from "../components/Input";
 
-export default function RecuperarSenha() {
+export default function AlterarSenha() {
   const navigation = useNavigation();
-  const [email, setEmail] = useState("");
+  const route = useRoute();
+  const email = (route.params as { email: string }).email;
 
-  const validaEmail = (email: string) => {
-    const resp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return resp.test(email);
-  };
+  const [novaSenha, setNovaSenha] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
 
-  const verificarEmail = async () => {
-    if (!email.trim() || !validaEmail(email)) {
-      Alert.alert("Erro", "Por favor, insira um email válido.");
+  const alterarSenha = async () => {
+    if (!novaSenha.trim() || novaSenha.length < 6) {
+      Alert.alert("Erro", "A senha deve ter no mínimo 6 caracteres.");
+      return;
+    }
+
+    if (novaSenha !== confirmarSenha) {
+      Alert.alert("Erro", "As senhas não coincidem.");
       return;
     }
 
     try {
       const baseURL = process.env.EXPO_PUBLIC_API_URL;
       const resposta = await fetch(
-        `${baseURL}/alterarsenha/verificar-email`,
+        `${baseURL}/alterarsenha/alterar`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({
+            email,
+            newPassword: novaSenha,
+          }),
         }
       );
 
       const dados = await resposta.json();
 
       if (resposta.status === 200) {
-        Alert.alert(
-          "Confirmação",
-          "E-mail encontrado! Você será redirecionado para alterar sua senha.",
-          [
-            {
-              text: "OK",
-              onPress: () => (navigation as any).navigate("alterarSenha", { email }),
-            },
-          ]
-        );
-      } else if (resposta.status === 404) {
-        Alert.alert(
-          "Atenção",
-          "Não existe uma conta cadastrada com este e-mail."
-        );
+        Alert.alert("Sucesso!", "Senha alterada com sucesso!", [
+          {
+            text: "OK",
+            onPress: () => (navigation as any).navigate("index"),
+          },
+        ]);
       } else {
-        Alert.alert("Erro", dados.error || "Erro ao verificar e-mail.");
+        Alert.alert("Erro", dados.error || "Erro ao alterar senha.");
       }
     } catch (error) {
       Alert.alert("Erro", "Não foi possível conectar ao servidor.");
@@ -78,19 +76,28 @@ export default function RecuperarSenha() {
           />
         </View>
 
-        <Text style={styles.titulo}>Recuperar senha</Text>
+        <Text style={styles.titulo}>Alterar Senha</Text>
         <Text style={styles.descricao}>
-          Digite seu e-mail para verificar sua conta e alterar a senha.
+          Defina sua nova senha para a conta: {email}
         </Text>
 
         <Input
-          label="Digite seu e-mail:"
-          placeholder="email@example.com"
-          value={email}
-          onChange={setEmail}
+          label="Nova senha:"
+          placeholder="••••••••"
+          value={novaSenha}
+          onChange={setNovaSenha}
+          secureTextEntry
         />
 
-        <Button label="Verificar E-mail" onPress={verificarEmail} />
+        <Input
+          label="Confirmar senha:"
+          placeholder="••••••••"
+          value={confirmarSenha}
+          onChange={setConfirmarSenha}
+          secureTextEntry
+        />
+
+        <Button label="Alterar Senha" onPress={alterarSenha} />
       </View>
     </TouchableWithoutFeedback>
   );

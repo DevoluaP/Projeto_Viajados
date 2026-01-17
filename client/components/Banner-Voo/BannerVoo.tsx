@@ -1,3 +1,4 @@
+import React from "react";
 import {
   ActivityIndicator,
   Image,
@@ -7,9 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
-
 import { MaterialIcons } from "@expo/vector-icons";
-import React from "react";
 
 type Props = {
   imagem: ImageSourcePropType;
@@ -27,7 +26,6 @@ export default function BannerVoo({
   imagem,
   destino,
   origem,
-  data,
   preco,
   favorito,
   onFavoritar,
@@ -58,16 +56,21 @@ export default function BannerVoo({
           <Text style={styles.precoSubtexto}>por pessoa</Text>
         </View>
       </View>
-      
+
       <View style={styles.conteudo}>
         <View style={styles.destinoContainer}>
           <View style={styles.rotaContainer}>
             <Text style={styles.origem}>{origem}</Text>
-            <MaterialIcons name="flight" size={16} color="#666666" style={styles.iconeVoo} />
+            <MaterialIcons
+              name="flight"
+              size={16}
+              color="#666666"
+              style={styles.iconeVoo}
+            />
             <Text style={styles.destino}>{destino}</Text>
           </View>
         </View>
-        
+
         <View style={styles.rodape}>
           <Text style={styles.textoInfo}>Taxas e impostos não inclusos</Text>
         </View>
@@ -86,14 +89,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    width: "100%", // Garante que o banner ocupe toda a largura do pai
+    width: "100%",
   },
   imagemContainer: {
     position: "relative",
     height: 180,
   },
   imagem: {
-    width: "100%", // Garante que a imagem ocupe toda a largura
+    width: "100%",
     height: "100%",
   },
   iconeFavorito: {

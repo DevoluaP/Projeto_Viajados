@@ -25,50 +25,105 @@ Certifique-se de ter as seguintes ferramentas instaladas:
 * [Expo](https://expo.dev) (para visualizar o projeto)
 * [Node.js](https://nodejs.org) (para rodar o back-end)
 * [Git](https://git-scm.com) (para clonar o repositório)
+* [XAMPP](https://www.apachefriends.org/) ou [WAMP](https://www.wampserver.com/) (para rodar o servidor MySQL)
+* **phpMyAdmin** (geralmente incluído no XAMPP/WAMP para gerenciar o banco de dados)
 
 ### Passos para Instalação
 
-1. Clone o repositório do GitHub:
+#### 1. Clone o repositório do GitHub:
 
 ```
 git clone https://github.com/DevoluaP/Projeto_Viajados.git
+```
+
+
+#### 2. Instale as dependências:
+
+```bash
 cd Projeto_Viajados
 ```
-
-2. Instale as dependências para o back-end e front-end:
-
-* **Back-end**:
-
+```bash
+npm install
 ```
+
+
+#### 3. Configure o Banco de Dados:
+
+1. **Inicie o XAMPP/WAMP** e ative os módulos **Apache** e **MySQL**
+2. Acesse o **phpMyAdmin** pelo navegador: `http://localhost/phpmyadmin`
+3. Crie um novo banco de dados chamado `viajados`:
+   - Clique em "Novo" (New)
+   - Nome do banco: `viajados`
+   - Cotejamento: `utf8_bin`
+   - Clique em "Criar"
+4. Importe a estrutura do banco de dados:
+   - Selecione o banco `viajados`
+   - Vá na aba "Importar" (Import)
+   - Clique em "Escolher arquivo" e selecione o arquivo SQL do projeto (em `server/src/db/viajados.sql`)
+   - Clique em "Executar"
+
+```bash
 cd server
-npm install
+```
+```bash
+npm run setup
 ```
 
-* **Front-end**: Abra outro terminal na raiz do projeto e execute:
 
+#### 5. Atualize o IP do servidor no front-end:
+
+Na pasta `client`, procure pelo arquivo `.env` e substitua pelo IP da sua máquina local:
+
+1. Descubra seu IP:
+   - **Windows**: Execute `ipconfig` no CMD e procure por "Endereço IPv4"
+   - **Mac/Linux**: Execute `ifconfig` no terminal
+
+2. Substitua no arquivo .env:
+```typescript
+   // De: http://192.168.1.101:5000
+   // Para: http://seuenderecoipva4:5000
 ```
-cd client
-npm install
+
+
+## Testando a Aplicação
+
+1. **Verifique se o MySQL está rodando**:
+   - Abra o XAMPP/WAMP Control Panel
+   - Certifique-se que o módulo MySQL está com status "Running" (verde)
+
+2. **Inicie o back-end**:
+```bash
+   cd server
 ```
+```bash
+   npm start (ou npm run dev)
+```
+   - Você deve ver:
+   `Servidor rodando na porta 5000`
+   `✅ Conectado ao banco de dados MySQL`
 
-## Script Disponíveis
+3. **Inicie o front-end**:
+```bash
+   cd client
+```
+```bash
+   npm start
+```
+   - Escaneie o QR Code com o app Expo Go
+   - Ou pressione `A` para abrir no Android Studio
 
-Após a instalação, você pode iniciar o front-end e o back-end com os seguintes comandos:
 
-### Back-end (server)
+## Solução de Problemas Comuns
 
-Na pasta `server`, você pode rodar:
+### Erro: "ECONNREFUSED" ao conectar ao MySQL
+- **Solução**: Verifique se o MySQL está rodando no XAMPP/WAMP.
 
-* `npm start`: Inicia o servidor em modo de desenvolvimento.
+### Erro: "Network request failed" no app
+- **Solução**: Verifique se o IP no front-end está correto e se seu celular está na mesma rede Wi-Fi.
 
-* `npm run dev`: Inicia o servidor usando o `nodemon` para recarregar automaticamente em caso de mudanças (necessita do `nodemon` instalado globalmente ou como dependência de desenvolvimento).
+### Erro: "ER_ACCESS_DENIED_ERROR"
+- **Solução**: Verifique as credenciais do banco de dados no arquivo `.env`.
 
-### Front-end (client)
-
-Na pasta `client`, você pode rodar:
-
-* `npm start`: Inicia o aplicativo em modo de desenvolvimento.
-Abra o Expo e/ou o Android Studio para visualizar.
 
 ## Contribuindo
 
@@ -93,3 +148,8 @@ git push origin minha-nova-feature
 ```
 
 4. Abra um Pull Request no GitHub.
+
+
+## Contato
+
+Para dúvidas ou sugestões, entre em contato através do GitHub ou abra uma issue no repositório.

@@ -7,7 +7,6 @@ import {
   Text,
   View,
 } from "react-native";
-
 import { MaterialIcons } from "@expo/vector-icons";
 
 type Props = {
@@ -57,34 +56,34 @@ export default function BannerHotelFavoritos({
       <View style={styles.imagemContainer}>
         <Image source={imagem} style={styles.imagem} resizeMode="cover" />
       </View>
-      
+
       <View style={styles.conteudo}>
         <View style={styles.cabecalho}>
-          <Text style={styles.nome} numberOfLines={1}>{nome}</Text>
-          <Pressable 
-            onPress={handleDesfavoritar} 
+          <Text style={styles.nome} numberOfLines={1}>
+            {nome}
+          </Text>
+          <Pressable
+            onPress={handleDesfavoritar}
             style={styles.iconeFavorito}
             disabled={isLoading}
           >
             {isLoading ? (
               <ActivityIndicator size="small" color="#D6005D" />
             ) : (
-              <MaterialIcons
-                name="favorite" 
-                size={20}
-                color="#D6005D"
-              />
+              <MaterialIcons name="favorite" size={20} color="#D6005D" />
             )}
           </Pressable>
         </View>
-        
+
         <View style={styles.avaliacaoContainer}>
           <View style={styles.avaliacao}>{numeroEstrelas(avaliacao)}</View>
           <Text style={styles.avaliacaoTexto}>{avaliacao.toFixed(1)}</Text>
         </View>
-        
-        <Text style={styles.descricao} numberOfLines={2}>{descricao}</Text>
-        
+
+        <Text style={styles.descricao} numberOfLines={2}>
+          {descricao}
+        </Text>
+
         <View style={styles.precoContainer}>
           <View>
             <Text style={styles.precoLabel}>Preço por pessoa</Text>
@@ -117,7 +116,7 @@ const styles = StyleSheet.create({
   imagem: {
     width: "100%",
     height: "100%",
-    objectFit:"cover"
+    objectFit: "cover",
   },
   conteudo: {
     flex: 1,
@@ -146,7 +145,6 @@ const styles = StyleSheet.create({
   avaliacaoContainer: {
     flexDirection: "row",
     alignItems: "center",
-   
   },
   avaliacao: {
     flexDirection: "row",
@@ -166,7 +164,6 @@ const styles = StyleSheet.create({
   precoContainer: {
     marginTop: 4,
     flexDirection: "row",
-  
   },
   precoLabel: {
     fontSize: 12,
@@ -181,6 +178,5 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: "#999999",
     fontStyle: "italic",
-   
   },
 });

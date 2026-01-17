@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -8,8 +9,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import React, { useEffect, useState } from "react";
-
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function ModalReserva({ visible, onClose, idHotel }) {
@@ -37,8 +36,9 @@ export default function ModalReserva({ visible, onClose, idHotel }) {
 
     setLoading(true);
     try {
+      const baseURL = process.env.EXPO_PUBLIC_API_URL;
       const response = await fetch(
-        `https://backend-viajados.vercel.app/api/reservas/hospedagens/${idUsuario}`,
+        `${baseURL}/reservas/hospedagens/${idUsuario}`,
         {
           method: "POST",
           headers: {
@@ -95,7 +95,11 @@ export default function ModalReserva({ visible, onClose, idHotel }) {
               <Text style={styles.buttonText}>Cancelar</Text>
             </Pressable>
 
-            <Pressable style={styles.button} onPress={reservarHotel} disabled={loading}>
+            <Pressable
+              style={styles.button}
+              onPress={reservarHotel}
+              disabled={loading}
+            >
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (

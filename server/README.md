@@ -13,7 +13,6 @@
 - Node.js e Express.js para a construção da API.
 - MySQL para o banco de dados.
 - Bcrypt para criptografia de senhas.
-- Nodemailer para envio de e-mails.
 
 # Endpoints Da API
 
@@ -50,7 +49,7 @@
 ## 3- Alterar senha
 - **Método:** POST  
 - **Endpoint:** `/api/alterarsenha`  
-- **Descrição:** Envia o e-mail de redefinição de senha para o usuário.  
+- **Descrição:** Confirma se o e-mail está registrado no banco de dados e retorna para adicionar nova senha.
 - **Body:**
 ```json
 {
@@ -217,4 +216,3 @@
 - `400 Bad Request` – Erro nos parâmetros da requisição.
 - `409 Conflict` – Recurso já existe.
 - `500 Internal Server Error` – Erro no servidor.
-

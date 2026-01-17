@@ -1,3 +1,4 @@
+import React from "react";
 import {
   ActivityIndicator,
   Image,
@@ -7,9 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
-
 import { MaterialIcons } from "@expo/vector-icons";
-import React from "react";
 
 type Props = {
   imagem: ImageSourcePropType;
@@ -75,18 +74,22 @@ export default function BannerHotel({
           <Text style={styles.precoSubtexto}>por pessoa</Text>
         </View>
       </View>
-      
+
       <View style={styles.conteudo}>
         <View style={styles.cabecalho}>
-          <Text style={styles.nome} numberOfLines={1}>{nome}</Text>
+          <Text style={styles.nome} numberOfLines={1}>
+            {nome}
+          </Text>
           <View style={styles.avaliacaoContainer}>
             <View style={styles.avaliacao}>{numeroEstrelas(avaliacao)}</View>
             <Text style={styles.avaliacaoTexto}>{avaliacao.toFixed(1)}</Text>
           </View>
         </View>
-        
-        <Text style={styles.descricao} numberOfLines={2}>{descricao}</Text>
-        
+
+        <Text style={styles.descricao} numberOfLines={2}>
+          {descricao}
+        </Text>
+
         <View style={styles.rodape}>
           <Text style={styles.textoInfo}>Taxas e impostos não inclusos</Text>
         </View>
@@ -127,13 +130,12 @@ const styles = StyleSheet.create({
     minHeight: 38,
     justifyContent: "center",
     alignItems: "center",
-    borderColor:"black",
+    borderColor: "black",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
- 
   },
   precoTag: {
     position: "absolute",

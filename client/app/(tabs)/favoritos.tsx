@@ -1,3 +1,4 @@
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -8,7 +9,6 @@ import {
   Text,
   View,
 } from "react-native";
-import React, { useCallback, useEffect, useState } from "react";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -16,7 +16,8 @@ import BannerHotelFavoritos from "@/components/Banner-Hotel/BannerHotelFavoritos
 import BannerVooFavoritos from "@/components/Banner-Voo/BannerVooFavoritos";
 import ModalHotel from "@/components/Modal/ModalHotel";
 import ModalVoo from "@/components/Modal/ModalVoo";
-import verificarToken from "../verificarToken";
+import { verificarToken } from "../../functions/verificarToken";
+import { getHotelImage, getVooImage } from "../../imageMapper";
 
 export default function Favoritos() {
   const [opcaoSelecionada, setOpcaoSelecionada] = useState("hoteis");
@@ -30,6 +31,7 @@ export default function Favoritos() {
   const [idUsuario, setIdUsuario] = useState(null);
   const [notificacao, setNotificacao] = useState(null);
   const [desfavoritandoIds, setDesfavoritandoIds] = useState({});
+  const baseURL = process.env.EXPO_PUBLIC_API_URL;
 
   const navigation = useNavigation();
 
@@ -60,7 +62,7 @@ export default function Favoritos() {
       setIdUsuario(usuarioId);
 
       const respostaHoteis = await fetch(
-        `https://backend-viajados.vercel.app/api/favoritos/hoteis?idUsuario=${usuarioId}`,
+        `${baseURL}/favoritos/hoteis?idUsuario=${usuarioId}`,
         {
           method: "GET",
           headers: {
@@ -83,7 +85,7 @@ export default function Favoritos() {
       }
 
       const respostaVoos = await fetch(
-        `https://backend-viajados.vercel.app/api/favoritos/voos?idUsuario=${usuarioId}`,
+        `${baseURL}/favoritos/voos?idUsuario=${usuarioId}`,
         {
           method: "GET",
           headers: {
@@ -116,7 +118,7 @@ export default function Favoritos() {
   const toggleFavorito = async (id, tipo) => {
     const chave = `${tipo}_${id}`;
     try {
-      setDesfavoritandoIds(prev => ({ ...prev, [chave]: true }));
+      setDesfavoritandoIds((prev) => ({ ...prev, [chave]: true }));
 
       const token = await AsyncStorage.getItem("token");
       if (!token || !idUsuario) {
@@ -125,7 +127,7 @@ export default function Favoritos() {
         return;
       }
 
-      const url = `https://backend-viajados.vercel.app/api/favoritos/${
+      const url = `${baseURL}/favoritos/${
         tipo === "hotel" ? "hoteis" : "voos"
       }`;
 
@@ -143,10 +145,10 @@ export default function Favoritos() {
 
       if (response.ok) {
         if (tipo === "hotel") {
-          setHoteis(prev => prev.filter(hotel => hotel.idHoteis !== id));
+          setHoteis((prev) => prev.filter((hotel) => hotel.idHoteis !== id));
           mostrarNotificacao("Hotel foi removido dos favoritos!");
         } else {
-          setVoos(prev => prev.filter(voo => voo.idVoos !== id));
+          setVoos((prev) => prev.filter((voo) => voo.idVoos !== id));
           mostrarNotificacao("Voo foi removido dos favoritos!");
         }
       } else {
@@ -164,7 +166,7 @@ export default function Favoritos() {
       console.error("Erro ao desfavoritar:", error);
       mostrarNotificacao("Erro ao remover favorito");
     } finally {
-      setDesfavoritandoIds(prev => ({ ...prev, [chave]: false }));
+      setDesfavoritandoIds((prev) => ({ ...prev, [chave]: false }));
     }
   };
 
@@ -208,13 +210,14 @@ export default function Favoritos() {
         visible={modalHotelVisivel}
         hotel={hotelSelecionado}
         onClose={() => setModalHotelVisivel(false)}
+        imagemHotel={getHotelImage(hotelSelecionado?.idHoteis)}
       />
 
       <ModalVoo
         visible={modalVooVisivel}
         voo={vooSelecionado}
         onClose={() => setModalVooVisivel(false)}
-        formatarData={formatarData}
+        imagemVoo={getVooImage(vooSelecionado?.idVoos)}
       />
 
       <StatusBar
@@ -245,7 +248,8 @@ export default function Favoritos() {
               <Text
                 style={[
                   styles.textoFiltro,
-                  opcaoSelecionada === "hoteis" && styles.textoFiltroSelecionado,
+                  opcaoSelecionada === "hoteis" &&
+                    styles.textoFiltroSelecionado,
                 ]}
               >
                 Hotéis
@@ -280,19 +284,15 @@ export default function Favoritos() {
                   hoteis.map((hotel, index) => (
                     <BannerHotelFavoritos
                       key={index}
-                      imagem={
-                        hotel.imagens &&
-                        Array.isArray(hotel.imagens) &&
-                        hotel.imagens[0]
-                          ? { uri: hotel.imagens[0] }
-                          : require("../../assets/images/defaultImage.jpg")
-                      }
+                      imagem={getHotelImage(hotel.idHoteis)}
                       nome={hotel.nome || "Hotel sem nome"}
                       descricao={hotel.descricao || "Sem descrição"}
                       avaliacao={hotel.avaliacao || 0}
                       preco={hotel.preco_diaria || "Preço não disponível"}
                       onPress={() => bannerHotelPressionado(hotel)}
-                      onDesfavoritar={() => toggleFavorito(hotel.idHoteis, "hotel")}
+                      onDesfavoritar={() =>
+                        toggleFavorito(hotel.idHoteis, "hotel")
+                      }
                       isLoading={desfavoritandoIds[`hotel_${hotel.idHoteis}`]}
                     />
                   ))
@@ -312,13 +312,7 @@ export default function Favoritos() {
                   voos.map((voo, index) => (
                     <BannerVooFavoritos
                       key={index}
-                      imagem={
-                        voo.imagens &&
-                        Array.isArray(voo.imagens) &&
-                        voo.imagens[0]
-                          ? { uri: voo.imagens[0] }
-                          : require("../../assets/images/defaultImage.jpg")
-                      }
+                      imagem={getVooImage(voo.idVoos)}
                       destino={voo.destino || "Destino não informado"}
                       origem={voo.origem || "Origem não informada"}
                       data={formatarData(voo.data) || "Data não informada"}

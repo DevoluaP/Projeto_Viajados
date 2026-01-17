@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -7,15 +8,15 @@ import {
   StyleSheet,
   Text,
   TouchableWithoutFeedback,
-  View
+  View,
 } from "react-native";
-import React, { useState } from "react";
+import { useNavigation } from "@react-navigation/native";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from 'react-native-toast-message';
 import Button from "../components/Button";
 import Input from "../components/Input";
 import { Link } from "expo-router";
-import { useNavigation } from "@react-navigation/native";
 
 export default function Index() {
   const navigation = useNavigation();
@@ -23,13 +24,19 @@ export default function Index() {
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const validaEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validaEmail = (email: string): boolean =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   function navegarParaHome() {
-    navigation.navigate("(tabs)", { screen: "explorar" });
+    (navigation as any).navigate("(tabs)", { screen: "explorar" });
   }
 
-  const salvarDados = async (token, idUsuario, email, nome) => {
+  const salvarDados = async (
+    token: string,
+    idUsuario: number | string,
+    email: string,
+    nome: string
+  ): Promise<void> => {
     try {
       await AsyncStorage.setItem("token", token);
       await AsyncStorage.setItem("idUsuario", String(idUsuario));
@@ -56,7 +63,8 @@ export default function Index() {
     const dadosUsuario = { email, senha };
 
     try {
-      const resposta = await fetch("https://backend-viajados.vercel.app/api/login", {
+      const baseURL = process.env.EXPO_PUBLIC_API_URL;
+      const resposta = await fetch(`${baseURL}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -73,61 +81,104 @@ export default function Index() {
 
         await salvarDados(token, idUsuario, emailUsuario, nome);
 
-        Alert.alert("Sucesso", "Login realizado com sucesso!", [
-          {
-            text: "OK",
-            onPress: () => navegarParaHome(),
-          },
-        ]);
+        Toast.show({
+          type: "success",
+          text1: "Sucesso",
+          text2: "Login realizado com sucesso!",
+          visibilityTime: 1500,
+          position: "bottom",
+        });
+
+        setTimeout(() => {
+          setLoading(false);
+          navegarParaHome();
+        }, 1500);
       } else if (resposta.status === 404 || resposta.status === 401) {
+        setLoading(false);
         Alert.alert("Erro", "Email e/ou senha incorretos!");
       } else {
-        Alert.alert("Erro", dados.message || "Falha ao realizar login. Tente novamente.");
+        setLoading(false);
+        Alert.alert(
+          "Erro",
+          dados.message || "Falha ao realizar login. Tente novamente."
+        );
       }
     } catch (error) {
       console.error("Erro na requisição:", error);
-      Alert.alert(
-        "Erro",
-        error.message === "Network request failed"
-          ? "Falha na conexão com o servidor. Verifique sua internet."
-          : "Ocorreu um erro inesperado. Tente novamente."
-      );
-    } finally {
       setLoading(false);
+
+      let mensagemErro = "Ocorreu um erro inesperado. Tente novamente.";
+      if (error instanceof Error) {
+        if (error.message === "Network request failed") {
+          mensagemErro =
+            "Falha na conexão com o servidor. Verifique sua internet.";
+        }
+      }
+      Alert.alert("Erro", mensagemErro);
     }
   };
 
   return (
     <>
-      <StatusBar barStyle="dark-content" backgroundColor="#FDD5E9" translucent={false} />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#FDD5E9"
+        translucent={false}
+      />
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.container}>
           <View style={styles.logoContainer}>
-            <Image source={require("../assets/images/logo.png")} style={styles.logo} />
+            <Image
+              source={require("../assets/images/logo.png")}
+              style={styles.logo}
+            />
           </View>
 
-          <Input label="Digite seu Email:" placeholder="email@gmail.com" onChange={setEmail} value={email} />
-          <Input label="Digite sua Senha:" placeholder="*******" secureTextEntry value={senha} onChange={setSenha} />
+          <Input
+            label="Digite seu Email:"
+            placeholder="email@gmail.com"
+            onChange={setEmail}
+            value={email}
+          />
+          <Input
+            label="Digite sua Senha:"
+            placeholder="*******"
+            secureTextEntry
+            value={senha}
+            onChange={setSenha}
+          />
 
           <View style={styles.ContainerRecPass}>
-            <Link href="/recuperarSenha" style={styles.link}>Esqueceu a senha?</Link>
+            <Link href="/recuperarSenha" style={styles.link}>
+              Esqueceu a senha?
+            </Link>
           </View>
 
           {loading ? (
             <ActivityIndicator size="large" color="#FF3366" />
           ) : (
-            <Button label="Continuar" onPress={continuarPressionado} disabled={loading} />
+            <Button
+              label="Continuar"
+              onPress={continuarPressionado}
+              disabled={loading}
+            />
           )}
 
           <Text style={styles.textContainer}>
-            Não tem uma conta? <Link href="/cadastro" style={styles.link}>Cadastre-se aqui</Link>
+            Não tem uma conta?{" "}
+            <Link href="/cadastro" style={styles.link}>
+              Cadastre-se aqui
+            </Link>
           </Text>
 
           <Text style={styles.termsText}>
-            Ao criar uma conta, você concorda com a nossa <Text style={styles.link}>Política de privacidade</Text> e os nossos <Text style={styles.link}>Termos de uso</Text>.
+            Ao criar uma conta, você concorda com a nossa{" "}
+            <Text style={styles.link}>Política de privacidade</Text> e os nossos{" "}
+            <Text style={styles.link}>Termos de uso</Text>.
           </Text>
         </View>
       </TouchableWithoutFeedback>
+      <Toast />
     </>
   );
 }

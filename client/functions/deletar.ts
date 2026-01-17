@@ -1,7 +1,8 @@
 const deletar = async (usuarioId, token, navigation) => {
   try {
+    const baseURL = process.env.EXPO_PUBLIC_API_URL;
     const response = await fetch(
-      `https://backend-viajados.vercel.app/api/alterardados/excluir?idUsuario=${usuarioId}`,
+      `${baseURL}/alterardados/excluir?idUsuario=${usuarioId}`,
       {
         method: "PUT",
         headers: {
@@ -21,7 +22,7 @@ const deletar = async (usuarioId, token, navigation) => {
       });
     } else {
       console.error("Erro ao deletar conta:", data);
-    }    
+    }
   } catch (error) {
     console.error("Erro ao deletar conta:", error);
 

@@ -7,7 +7,6 @@ import {
   Text,
   View,
 } from "react-native";
-
 import { MaterialIcons } from "@expo/vector-icons";
 
 type Props = {
@@ -44,7 +43,10 @@ export default function BannerVooFavoritos({
       </View>
       <View style={styles.conteudo}>
         <View style={styles.cabecalho}>
-          <Text style={styles.destino} numberOfLines={1}>{`${origem} → ${destino}`}</Text>
+          <Text
+            style={styles.destino}
+            numberOfLines={1}
+          >{`${origem} → ${destino}`}</Text>
           <Pressable
             onPress={handleDesfavoritar}
             style={styles.iconeFavorito}
@@ -53,16 +55,14 @@ export default function BannerVooFavoritos({
             {isLoading ? (
               <ActivityIndicator size="small" color="#D6005D" />
             ) : (
-              <MaterialIcons
-                name="favorite" 
-                size={20}
-                color="#D6005D"
-              />
+              <MaterialIcons name="favorite" size={20} color="#D6005D" />
             )}
           </Pressable>
         </View>
 
-        <Text style={styles.data}>Data: {data || "Consultar Disponibilidade"}</Text>
+        <Text style={styles.data}>
+          Data: {data || "Consultar Disponibilidade"}
+        </Text>
         <View style={styles.precoContainer}>
           <Text style={styles.precoLabel}>Preço por pessoa</Text>
           <Text style={styles.preco}>R$ {preco}</Text>
@@ -98,7 +98,6 @@ const styles = StyleSheet.create({
   conteudo: {
     flex: 1,
     padding: 10,
-
   },
   cabecalho: {
     flexDirection: "row",

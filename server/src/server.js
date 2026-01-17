@@ -1,6 +1,6 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors'); // Importando o CORS
+const cors = require('cors');
 const app = express();
 const porta = process.env.PORT || 3000;
 
@@ -15,28 +15,25 @@ const verificarToken = require("./middlewares/verificarToken");
 const salvarimagem = require("./routes/salvar-imagem")
 const reservas = require("./routes/reservas")
 
-
-app.use(cors());
-
-
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 
-// Rotas públicas
-app.use("/api/cadastro", cadastro);
-app.use("/api/login", login);
-app.use("/api/alterarsenha", alterarSenha);
+app.use("/cadastro", cadastro);
+app.use("/login", login);
+app.use("/alterarsenha", alterarSenha);
 
-// Middleware de autenticação
 app.use(verificarToken);
 
-// Rotas protegidas (exigem token)
-app.use("/api/hoteis", hoteis);
-app.use("/api/voos", voos);
-app.use("/api/favoritos", favoritos);
-app.use("/api/alterardados", alterarDados);
-app.use("/api/salvar-imagem",salvarimagem);
-app.use("/api/reservas",reservas);
-
+app.use("/hoteis", hoteis);
+app.use("/voos", voos);
+app.use("/favoritos", favoritos);
+app.use("/alterardados", alterarDados);
+app.use("/salvar-imagem", salvarimagem);
+app.use("/reservas", reservas);
 
 app.listen(porta, () => {
   console.log(`Servidor rodando na porta ${porta}`);

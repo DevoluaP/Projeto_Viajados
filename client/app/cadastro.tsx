@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   Alert,
   Image,
@@ -6,13 +7,12 @@ import {
   StyleSheet,
   Text,
   TouchableWithoutFeedback,
-  View
+  View,
 } from "react-native";
-import React, { useState } from "react";
+import { useNavigation } from "@react-navigation/native";
 
 import Button from "../components/Button";
 import Input from "../components/Input";
-import { useNavigation } from "@react-navigation/native";
 
 export default function Cadastro() {
   const navigation = useNavigation();
@@ -26,22 +26,19 @@ export default function Cadastro() {
   const [confSenha, setConfSenha] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const validaEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validaEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const formatarCpf = (text: string) => {
-    let cpfFormatado = text.replace(/\D/g, ""); // Remove qualquer caractere não numérico
-  
-    // Limita o comprimento do CPF para 11 dígitos
+    let cpfFormatado = text.replace(/\D/g, "");
     cpfFormatado = cpfFormatado.slice(0, 11);
-  
-    // Aplica a formatação: xxx.xxx.xxx-xx
     if (cpfFormatado.length <= 11) {
       cpfFormatado = cpfFormatado.replace(/(\d{3})(\d)/, "$1.$2");
       cpfFormatado = cpfFormatado.replace(/(\d{3})(\d)/, "$1.$2");
       cpfFormatado = cpfFormatado.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
     }
-  
-    setCpf(cpfFormatado); 
+
+    setCpf(cpfFormatado);
   };
 
   const formatarDataInput = (text: string) => {
@@ -49,11 +46,13 @@ export default function Cadastro() {
     if (data.length > 8) {
       data = data.slice(0, 8);
     }
+    
     if (data.length > 4) {
       data = `${data.slice(0, 2)}/${data.slice(2, 4)}/${data.slice(4)}`;
     } else if (data.length > 2) {
       data = `${data.slice(0, 2)}/${data.slice(2)}`;
     }
+
     setDtNasc(data);
   };
 
@@ -64,71 +63,58 @@ export default function Cadastro() {
     }
     return data;
   };
-  
+
   const continuarPressionado = async () => {
     setIsLoading(true);
-    const nomeFormatado = nome.trim().replace(/\s+/g, "");
-    const nacionalidadeFormatado = nacionalidade.trim().replace(/\s+/g, "");
     const cpfNumerico = cpf.replace(/\D/g, "");
     const sexoFormatado = sexo === "Masculino" ? "M" : "F";
     const dataFormatada = converterDataParaEnvio(dtNasc);
-  
-    if (!nomeFormatado) {
+
+    if (!nome) {
       Alert.alert("Erro", "O campo Nome não pode estar vazio.");
       setIsLoading(false);
       return;
     }
-  
+
     if (cpfNumerico.length !== 11) {
       Alert.alert("Erro", "CPF inválido. O CPF deve ter 11 dígitos.");
       setIsLoading(false);
       return;
     }
-  
-    if (!dtNasc) {
-      Alert.alert("Erro", "O campo Data de Nascimento não pode estar vazio.");
-      setIsLoading(false);
-      return;
-    }
-  
-    if (!nacionalidadeFormatado) {
-      Alert.alert("Erro", "O campo Nacionalidade não pode estar vazio.");
-      setIsLoading(false);
-      return;
-    }
-  
+
     if (!email.trim() || !validaEmail(email)) {
       Alert.alert("Erro", "Por favor, insira um email válido.");
       setIsLoading(false);
       return;
     }
-  
+
     if (!senha.trim() || !confSenha.trim()) {
       Alert.alert("Erro", "Os campos de senha não podem estar vazios.");
       setIsLoading(false);
       return;
     }
-  
+
     if (senha !== confSenha) {
       Alert.alert("Erro", "As senhas não coincidem.");
       setIsLoading(false);
       return;
     }
-  
+
     const dadosUsuario = {
+      nome: nome,
       email: email,
       senha: senha,
-      nome: nomeFormatado,
-      ativo: 1,
       cpf: cpfNumerico,
       data_nascimento: dataFormatada,
-      nacionalidade: nacionalidadeFormatado,
+      nacionalidade: nacionalidade,
       sexo: sexoFormatado,
+      ativo: 1,
     };
-  
+
     try {
+      const baseURL = process.env.EXPO_PUBLIC_API_URL;
       const resposta = await fetch(
-        "https://backend-viajados.vercel.app/api/cadastro",
+        `${baseURL}/cadastro`,
         {
           method: "POST",
           headers: {
@@ -138,10 +124,7 @@ export default function Cadastro() {
           body: JSON.stringify(dadosUsuario),
         }
       );
-  
-      const dados = await resposta.json();
-      console.log(dados); 
-  
+
       if (resposta.status === 201) {
         Alert.alert("Sucesso", "Cadastro realizado com sucesso!", [
           { text: "OK", onPress: () => navigation.navigate("index") },
@@ -170,14 +153,14 @@ export default function Cadastro() {
         </View>
 
         <Input
-          label="Digite seu nome:"
+          label="*Digite seu nome:"
           placeholder="Digite seu nome"
           value={nome}
           onChange={setNome}
         />
 
         <Input
-          label="CPF:"
+          label="*CPF:"
           placeholder="000.000.000-00"
           value={cpf}
           onChange={formatarCpf}
@@ -202,24 +185,42 @@ export default function Cadastro() {
           <Button
             label="Masculino"
             onPress={() => setSexo("Masculino")}
-            style={sexo === "Masculino" ? styles.selecionado : {backgroundColor: "#D6005D", borderRadius: 10, paddingVertical: 5, paddingHorizontal: 10}}
+            style={
+              sexo === "Masculino"
+                ? styles.selecionado
+                : {
+                    backgroundColor: "#D6005D",
+                    borderRadius: 10,
+                    paddingVertical: 5,
+                    paddingHorizontal: 10,
+                  }
+            }
           />
           <Button
             label="Feminino"
             onPress={() => setSexo("Feminino")}
-            style={sexo === "Feminino" ? styles.selecionado : {backgroundColor: "#D6005D", borderRadius: 10, paddingVertical: 5, paddingHorizontal: 10}}
+            style={
+              sexo === "Feminino"
+                ? styles.selecionado
+                : {
+                    backgroundColor: "#D6005D",
+                    borderRadius: 10,
+                    paddingVertical: 5,
+                    paddingHorizontal: 10,
+                  }
+            }
           />
         </View>
 
         <Input
-          label="Digite seu Email:"
+          label="*Digite seu Email:"
           placeholder="email@exemplo.com"
           value={email}
           onChange={setEmail}
         />
 
         <Input
-          label="Digite sua Senha:"
+          label="*Digite sua Senha:"
           placeholder="*******"
           secureTextEntry
           value={senha}
@@ -227,17 +228,17 @@ export default function Cadastro() {
         />
 
         <Input
-          label="Confirme sua Senha:"
+          label="*Confirme sua Senha:"
           placeholder="*******"
           secureTextEntry
           value={confSenha}
           onChange={setConfSenha}
         />
 
-        <Button 
-          label={isLoading ? "Carregando..." : "Cadastrar"} 
+        <Button
+          label={isLoading ? "Carregando..." : "Cadastrar"}
           onPress={continuarPressionado}
-          disabled={isLoading} 
+          disabled={isLoading}
         />
 
         <Text style={styles.textoTermos}>
